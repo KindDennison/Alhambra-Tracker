@@ -171,39 +171,56 @@
       loadPayments();
     }
 
-    function updateTracker() {
-      const table = document.getElementById("paymentTable");
-      table.innerHTML = "";
-      let paidTotal = 0;
-      const sortedDisplay = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
-      sortedDisplay.forEach((p) => {
-        paidTotal += p.amount;
-        const remaining = Math.max(totalOwed - paidTotal, 0);
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
-          <td>£${p.amount}</td>
-          <td>£${remaining}</td>
-          <td><button class="delete-btn" onclick="deletePayment('${p.id}')">❌</button></td>
-        `;
-        table.appendChild(row);
-      });
+function updateTracker() {
+  const table = document.getElementById("paymentTable");
+  table.innerHTML = "";
 
-      const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
-      document.getElementById("progressBar").style.width = progressPercent + "%";
+  // Sort oldest first for correct running total
+  const sortedByDate = [...payments].sort((a, b) => new Date(a.date) - new Date(b.date));
+  let paidTotal = 0;
+  const rows = [];
 
-      const startDate = payments.length ? new Date(payments[0].date) : new Date("2025-10-01");
-      const monthsLeft = Math.ceil((totalOwed - paidTotal) / monthlyPayment);
-      const finalDate = new Date(startDate);
-      finalDate.setMonth(finalDate.getMonth() + monthsLeft);
+  sortedByDate.forEach((p) => {
+    paidTotal += p.amount;
+    const remaining = Math.max(totalOwed - paidTotal, 0);
+    rows.push({
+      date: p.date,
+      amount: p.amount,
+      remaining,
+      id: p.id
+    });
+  });
 
-      document.getElementById("summaryText").innerHTML = `
-        <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
-        <strong>Paid:</strong> £${paidTotal} &nbsp; | &nbsp;
-        <strong>Remaining:</strong> £${Math.max(totalOwed - paidTotal, 0)} &nbsp; | &nbsp;
-        <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
-      `;
-    }
+  // Display newest first
+  rows.reverse().forEach((r) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${new Date(r.date).toLocaleDateString("en-GB")}</td>
+      <td>£${r.amount}</td>
+      <td>£${r.remaining}</td>
+      <td><button class="delete-btn" onclick="deletePayment('${r.id}')">❌</button></td>
+    `;
+    table.appendChild(row);
+  });
+
+  // Update summary and progress bar
+  const totalPaid = paidTotal;
+  const remaining = Math.max(totalOwed - totalPaid, 0);
+  const progressPercent = Math.min(100, (totalPaid / totalOwed) * 100);
+  document.getElementById("progressBar").style.width = progressPercent + "%";
+
+  const startDate = payments.length ? new Date(sortedByDate[0].date) : new Date("2025-10-01");
+  const monthsLeft = Math.ceil(remaining / monthlyPayment);
+  const finalDate = new Date(startDate);
+  finalDate.setMonth(finalDate.getMonth() + monthsLeft);
+
+  document.getElementById("summaryText").innerHTML = `
+    <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
+    <strong>Paid:</strong> £${totalPaid} &nbsp; | &nbsp;
+    <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
+    <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
+  `;
+}
 
     function logout() {
       firebase.auth().signOut().then(() => window.location.href = "index.html");
@@ -211,3 +228,4 @@
   </script>
 </body>
 </html>
+
