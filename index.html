@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Dennison Repayment Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #0055a5;
+    }
+    .tracker {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.5rem;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    .progress-container {
+      background: #eee;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .progress-bar {
+      height: 20px;
+      background: #28a745;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .summary {
+      text-align: center;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="tracker">
+    <h1>Team Dennison Repayment Tracker</h1>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="summary" id="summaryText"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount Paid</th>
+          <th>Total Owed</th>
+        </tr>
+      </thead>
+      <tbody id="paymentTable">
+        <!-- Rows will be inserted by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const totalOwed = 7700;
+    const monthlyPayment = 100;
+    const startDate = new Date("2025-10-01");
+    const today = new Date();
+    const paymentsMade = Math.floor((today - startDate) / (1000 * 60 * 60 * 24 * 30.44));
+    const amountPaid = paymentsMade * monthlyPayment;
+    const remaining = totalOwed - amountPaid;
+    const monthsLeft = Math.ceil(remaining / monthlyPayment);
+    const finalDate = new Date(startDate);
+    finalDate.setMonth(finalDate.getMonth() + paymentsMade + monthsLeft);
+
+    // Update progress bar
+    const progressPercent = Math.min(100, (amountPaid / totalOwed) * 100);
+    document.getElementById("progressBar").style.width = progressPercent + "%";
+
+    // Update summary
+    document.getElementById("summaryText").innerHTML = `
+      <strong>Paid:</strong> £${amountPaid} &nbsp; | &nbsp;
+      <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
+      <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
+    `;
+
+    // Generate table rows
+    const table = document.getElementById("paymentTable");
+    for (let i = 0; i < paymentsMade; i++) {
+      const rowDate = new Date(startDate);
+      rowDate.setMonth(rowDate.getMonth() + i);
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${rowDate.toLocaleDateString("en-GB")}</td>
+        <td>£${monthlyPayment}</td>
+        <td>£${totalOwed - (monthlyPayment * (i + 1))}</td>
+      `;
+      table.appendChild(row);
+    }
+  </script>
+</body>
+</html>
