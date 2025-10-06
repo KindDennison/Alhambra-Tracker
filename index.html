@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Team Dennison Repayment Tracker</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -112,19 +117,43 @@
   </div>
 
   <script>
+    // 🔐 Replace with your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD3Zz3Zz3Zz3Zz3Zz3Zz3Zz3Zz3Zz3Zz3Z",
+      authDomain: "teamdennisnotreback.firebaseapp.com",
+      projectId: "teamdennisnotreback",
+      storageBucket: "teamdennisnotreback.appspot.com",
+      messagingSenderId: "691530876394",
+      appId: "1:691530876394:web:6e8e8e8e8e8e8e8e8e8e8e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const paymentsRef = db.collection("payments");
+
     const totalOwed = 7700;
     let payments = [];
 
-    // Load from localStorage
-    const saved = localStorage.getItem("teamDennisonPayments");
-    if (saved) {
-      payments = JSON.parse(saved);
-    } else {
-      payments.push({ amount: 100, date: "2025-10-06" }); // preload first payment
+    async function loadPayments() {
+      const snapshot = await paymentsRef.orderBy("date", "desc").get();
+      payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateTracker();
     }
 
-    function savePayments() {
-      localStorage.setItem("teamDennisonPayments", JSON.stringify(payments));
+    async function addPayment() {
+      const amount = parseFloat(document.getElementById("amountInput").value);
+      const date = document.getElementById("dateInput").value;
+      if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
+
+      await paymentsRef.add({ amount, date });
+      document.getElementById("amountInput").value = "";
+      document.getElementById("dateInput").value = "";
+      loadPayments();
+    }
+
+    async function deletePayment(id) {
+      await paymentsRef.doc(id).delete();
+      loadPayments();
     }
 
     function updateTracker() {
@@ -132,17 +161,14 @@
       table.innerHTML = "";
       let paidTotal = 0;
 
-      // Sort newest first
-      payments.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      payments.forEach((p, index) => {
+      payments.forEach((p) => {
         paidTotal += p.amount;
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
           <td>£${p.amount}</td>
           <td>£${Math.max(totalOwed - paidTotal, 0)}</td>
-          <td><button class="delete-btn" onclick="deletePayment(${index})">❌</button></td>
+          <td><button class="delete-btn" onclick="deletePayment('${p.id}')">❌</button></td>
         `;
         table.appendChild(row);
       });
@@ -165,26 +191,7 @@
       `;
     }
 
-    function addPayment() {
-      const amount = parseFloat(document.getElementById("amountInput").value);
-      const date = document.getElementById("dateInput").value;
-      if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
-
-      payments.push({ amount, date });
-      savePayments();
-      updateTracker();
-
-      document.getElementById("amountInput").value = "";
-      document.getElementById("dateInput").value = "";
-    }
-
-    function deletePayment(index) {
-      payments.splice(index, 1);
-      savePayments();
-      updateTracker();
-    }
-
-    updateTracker();
+    loadPayments();
   </script>
 </body>
 </html>
