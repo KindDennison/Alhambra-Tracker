@@ -71,6 +71,13 @@
     button:hover {
       background: #003f7f;
     }
+    .delete-btn {
+      color: red;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -95,6 +102,7 @@
           <th>Date</th>
           <th>Amount Paid</th>
           <th>Total Owed</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="paymentTable">
@@ -104,8 +112,20 @@
   </div>
 
   <script>
-    let totalOwed = 7700;
+    const totalOwed = 7700;
     let payments = [];
+
+    // Load from localStorage
+    const saved = localStorage.getItem("teamDennisonPayments");
+    if (saved) {
+      payments = JSON.parse(saved);
+    } else {
+      payments.push({ amount: 100, date: "2025-10-06" }); // preload first payment
+    }
+
+    function savePayments() {
+      localStorage.setItem("teamDennisonPayments", JSON.stringify(payments));
+    }
 
     function updateTracker() {
       const table = document.getElementById("paymentTable");
@@ -114,13 +134,14 @@
 
       payments.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      payments.forEach((p) => {
+      payments.forEach((p, index) => {
         paidTotal += p.amount;
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
           <td>£${p.amount}</td>
           <td>£${Math.max(totalOwed - paidTotal, 0)}</td>
+          <td><button class="delete-btn" onclick="deletePayment(${index})">❌</button></td>
         `;
         table.appendChild(row);
       });
@@ -149,14 +170,19 @@
       if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
 
       payments.push({ amount, date });
+      savePayments();
       updateTracker();
 
       document.getElementById("amountInput").value = "";
       document.getElementById("dateInput").value = "";
     }
 
-    // Optional: preload first payment
-    payments.push({ amount: 100, date: "2025-10-06" });
+    function deletePayment(index) {
+      payments.splice(index, 1);
+      savePayments();
+      updateTracker();
+    }
+
     updateTracker();
   </script>
 </body>
