@@ -51,6 +51,26 @@
       font-size: 1rem;
       margin-top: 1rem;
     }
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    input[type="number"], input[type="date"] {
+      padding: 0.5rem;
+      flex: 1;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #0055a5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #003f7f;
+    }
   </style>
 </head>
 <body>
@@ -62,6 +82,12 @@
     </div>
 
     <div class="summary" id="summaryText"></div>
+
+    <div class="input-group">
+      <input type="number" id="amountInput" placeholder="Amount Paid (£)" />
+      <input type="date" id="dateInput" />
+      <button onclick="addPayment()">Add Payment</button>
+    </div>
 
     <table>
       <thead>
@@ -78,41 +104,60 @@
   </div>
 
   <script>
-    const totalOwed = 7700;
-    const monthlyPayment = 100;
-    const startDate = new Date("2025-10-01");
-    const today = new Date();
-    const paymentsMade = Math.floor((today - startDate) / (1000 * 60 * 60 * 24 * 30.44));
-    const amountPaid = paymentsMade * monthlyPayment;
-    const remaining = totalOwed - amountPaid;
-    const monthsLeft = Math.ceil(remaining / monthlyPayment);
-    const finalDate = new Date(startDate);
-    finalDate.setMonth(finalDate.getMonth() + paymentsMade + monthsLeft);
+    let totalOwed = 7700;
+    let payments = [];
 
-    // Update progress bar
-    const progressPercent = Math.min(100, (amountPaid / totalOwed) * 100);
-    document.getElementById("progressBar").style.width = progressPercent + "%";
+    function updateTracker() {
+      const table = document.getElementById("paymentTable");
+      table.innerHTML = "";
+      let paidTotal = 0;
 
-    // Update summary
-    document.getElementById("summaryText").innerHTML = `
-      <strong>Paid:</strong> £${amountPaid} &nbsp; | &nbsp;
-      <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
-      <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
-    `;
+      payments.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Generate table rows
-    const table = document.getElementById("paymentTable");
-    for (let i = 0; i < paymentsMade; i++) {
-      const rowDate = new Date(startDate);
-      rowDate.setMonth(rowDate.getMonth() + i);
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${rowDate.toLocaleDateString("en-GB")}</td>
-        <td>£${monthlyPayment}</td>
-        <td>£${totalOwed - (monthlyPayment * (i + 1))}</td>
+      payments.forEach((p) => {
+        paidTotal += p.amount;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
+          <td>£${p.amount}</td>
+          <td>£${Math.max(totalOwed - paidTotal, 0)}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      const remaining = Math.max(totalOwed - paidTotal, 0);
+      const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
+      document.getElementById("progressBar").style.width = progressPercent + "%";
+
+      const monthsLeft = Math.ceil(remaining / 100);
+      const lastDate = payments.length
+        ? new Date(payments[payments.length - 1].date)
+        : new Date("2025-10-01");
+      const finalDate = new Date(lastDate);
+      finalDate.setMonth(finalDate.getMonth() + monthsLeft);
+
+      document.getElementById("summaryText").innerHTML = `
+        <strong>Paid:</strong> £${paidTotal} &nbsp; | &nbsp;
+        <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
+        <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
       `;
-      table.appendChild(row);
     }
+
+    function addPayment() {
+      const amount = parseFloat(document.getElementById("amountInput").value);
+      const date = document.getElementById("dateInput").value;
+      if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
+
+      payments.push({ amount, date });
+      updateTracker();
+
+      document.getElementById("amountInput").value = "";
+      document.getElementById("dateInput").value = "";
+    }
+
+    // Optional: preload first payment
+    payments.push({ amount: 100, date: "2025-10-06" });
+    updateTracker();
   </script>
 </body>
 </html>
