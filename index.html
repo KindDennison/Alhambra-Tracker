@@ -132,6 +132,7 @@
     const paymentsRef = db.collection("payments");
 
     const totalOwed = 7700;
+    const monthlyPayment = 100;
     let payments = [];
 
     async function loadPayments() {
@@ -177,14 +178,15 @@
       const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
       document.getElementById("progressBar").style.width = progressPercent + "%";
 
-      const monthsLeft = Math.ceil(remaining / 100);
-      const lastDate = payments.length
-        ? new Date(payments[0].date)
-        : new Date("2025-10-01");
-      const finalDate = new Date(lastDate);
-      finalDate.setMonth(finalDate.getMonth() + monthsLeft);
+      // Start and projected end dates
+      const sorted = [...payments].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const startDate = sorted.length ? new Date(sorted[0].date) : new Date("2025-10-01");
+      const monthsLeft = Math.ceil(remaining / monthlyPayment);
+      const finalDate = new Date(startDate);
+      finalDate.setMonth(finalDate.getMonth() + payments.length + monthsLeft);
 
       document.getElementById("summaryText").innerHTML = `
+        <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
         <strong>Paid:</strong> £${paidTotal} &nbsp; | &nbsp;
         <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
         <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
