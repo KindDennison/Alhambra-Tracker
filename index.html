@@ -132,7 +132,8 @@
       table.innerHTML = "";
       let paidTotal = 0;
 
-      payments.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Sort newest first
+      payments.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       payments.forEach((p, index) => {
         paidTotal += p.amount;
@@ -152,7 +153,7 @@
 
       const monthsLeft = Math.ceil(remaining / 100);
       const lastDate = payments.length
-        ? new Date(payments[payments.length - 1].date)
+        ? new Date(payments[0].date)
         : new Date("2025-10-01");
       const finalDate = new Date(lastDate);
       finalDate.setMonth(finalDate.getMonth() + monthsLeft);
