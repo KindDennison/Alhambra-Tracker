@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Alhambra Repayment Tracker</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+  <style>
+    /* Same styling as before */
+  </style>
+</head>
+<body>
+  <div class="tracker">
+    <h1>Alhambra Repayment Tracker</h1>
+    <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="summary" id="summaryText">Loading...</div>
+    <div class="input-group">
+      <input type="number" id="amountInput" placeholder="Amount Paid (£)" />
+      <input type="date" id="dateInput" />
+      <button onclick="addPayment()">Add Payment</button>
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Amount Paid</th><th>Total Owed</th><th></th></tr></thead>
+      <tbody id="paymentTable"></tbody>
+    </table>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const paymentsRef = db.collection("payments");
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) window.location.href = "index.html";
+      else loadPayments();
+    });
+
+    const totalOwed = 7700;
+    const monthlyPayment = 100;
+    let payments = [];
+
+    async function loadPayments() {
+      const snapshot = await paymentsRef.orderBy("date", "asc").get();
+      payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateTracker();
+    }
+
+    async function addPayment() {
+      const amount = parseFloat(document.getElementById("amountInput").value);
+      const date = document.getElementById("dateInput").value;
+      if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
+      await paymentsRef.add({ amount, date });
+      document.getElementById("amountInput").value = "";
+      document.getElementById("dateInput").value = "";
+      loadPayments();
+    }
+
+    async function deletePayment(id) {
+      await paymentsRef.doc(id).delete();
+      loadPayments();
+    }
+
+    function updateTracker() {
+      const table = document.getElementById("paymentTable");
+      table.innerHTML = "";
+      let paidTotal = 0;
+      const sortedDisplay = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+      sortedDisplay.forEach((p) => {
+        paidTotal += p.amount;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
+          <td>£${p.amount}</td>
+          <td>£${Math.max(totalOwed - paidTotal, 0)}</td>
+          <td><button class="delete-btn" onclick="deletePayment('${p.id}')">❌</button></td>
+        `;
+        table.appendChild(row);
+      });
+
+      const remaining = Math.max(totalOwed - paidTotal, 0);
+      const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
+      document.getElementById("progressBar").style.width = progressPercent + "%";
+
+      const startDate = payments.length ? new Date(payments[0].date) : new Date("2025-10-01");
+      const monthsLeft = Math.ceil(remaining / monthlyPayment);
+      const finalDate = new Date(startDate);
+      finalDate.setMonth(finalDate.getMonth() + monthsLeft);
+
+      document.getElementById("summaryText").innerHTML = `
+        <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
+        <strong>Paid:</strong> £${paidTotal} &nbsp; | &nbsp;
+        <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
+        <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
+      `;
+    }
+
+    function logout() {
+      firebase.auth().signOut().then(() => window.location.href = "index.html");
+    }
+  </script>
+</body>
+</html>
