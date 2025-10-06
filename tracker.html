@@ -178,29 +178,29 @@
       const sortedDisplay = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
       sortedDisplay.forEach((p) => {
         paidTotal += p.amount;
+        const remaining = Math.max(totalOwed - paidTotal, 0);
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${new Date(p.date).toLocaleDateString("en-GB")}</td>
           <td>£${p.amount}</td>
-          <td>£${Math.max(totalOwed - paidTotal, 0)}</td>
+          <td>£${remaining}</td>
           <td><button class="delete-btn" onclick="deletePayment('${p.id}')">❌</button></td>
         `;
         table.appendChild(row);
       });
 
-      const remaining = Math.max(totalOwed - paidTotal, 0);
       const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
       document.getElementById("progressBar").style.width = progressPercent + "%";
 
       const startDate = payments.length ? new Date(payments[0].date) : new Date("2025-10-01");
-      const monthsLeft = Math.ceil(remaining / monthlyPayment);
+      const monthsLeft = Math.ceil((totalOwed - paidTotal) / monthlyPayment);
       const finalDate = new Date(startDate);
       finalDate.setMonth(finalDate.getMonth() + monthsLeft);
 
       document.getElementById("summaryText").innerHTML = `
         <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
         <strong>Paid:</strong> £${paidTotal} &nbsp; | &nbsp;
-        <strong>Remaining:</strong> £${remaining} &nbsp; | &nbsp;
+        <strong>Remaining:</strong> £${Math.max(totalOwed - paidTotal, 0)} &nbsp; | &nbsp;
         <strong>Final Payment:</strong> ${finalDate.toLocaleDateString("en-GB")}
       `;
     }
