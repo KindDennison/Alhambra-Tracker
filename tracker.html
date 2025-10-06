@@ -7,24 +7,124 @@
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
   <style>
-    /* Same styling as before */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .tracker {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      color: #0055a5;
+      margin-bottom: 1rem;
+    }
+    .progress-container {
+      background: #eee;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .progress-bar {
+      height: 20px;
+      background: #28a745;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .summary {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    input[type="number"], input[type="date"] {
+      padding: 0.5rem;
+      flex: 1;
+      min-width: 120px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #0055a5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #003f7f;
+    }
+    .delete-btn {
+      color: red;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.5rem;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    .logout {
+      display: block;
+      margin: 0 auto;
+      margin-top: 1rem;
+      background: #999;
+    }
+    .logout:hover {
+      background: #666;
+    }
   </style>
 </head>
 <body>
   <div class="tracker">
     <h1>Alhambra Repayment Tracker</h1>
-    <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
     <div class="summary" id="summaryText">Loading...</div>
+
     <div class="input-group">
       <input type="number" id="amountInput" placeholder="Amount Paid (£)" />
       <input type="date" id="dateInput" />
       <button onclick="addPayment()">Add Payment</button>
     </div>
+
     <table>
-      <thead><tr><th>Date</th><th>Amount Paid</th><th>Total Owed</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount Paid</th>
+          <th>Total Owed</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="paymentTable"></tbody>
     </table>
-    <button onclick="logout()">Logout</button>
+
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <script>
