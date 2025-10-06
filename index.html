@@ -93,7 +93,7 @@
       <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <div class="summary" id="summaryText"></div>
+    <div class="summary" id="summaryText">Loading...</div>
 
     <div class="input-group">
       <input type="number" id="amountInput" placeholder="Amount Paid (£)" />
@@ -136,9 +136,14 @@
     let payments = [];
 
     async function loadPayments() {
-      const snapshot = await paymentsRef.orderBy("date", "desc").get();
-      payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateTracker();
+      try {
+        const snapshot = await paymentsRef.orderBy("date", "asc").get();
+        payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateTracker();
+      } catch (error) {
+        console.error("Error loading payments:", error);
+        document.getElementById("summaryText").textContent = "Failed to load data.";
+      }
     }
 
     async function addPayment() {
@@ -146,15 +151,25 @@
       const date = document.getElementById("dateInput").value;
       if (!amount || !date || amount <= 0) return alert("Enter a valid amount and date");
 
-      await paymentsRef.add({ amount, date });
-      document.getElementById("amountInput").value = "";
-      document.getElementById("dateInput").value = "";
-      loadPayments();
+      try {
+        await paymentsRef.add({ amount, date });
+        document.getElementById("amountInput").value = "";
+        document.getElementById("dateInput").value = "";
+        loadPayments();
+      } catch (error) {
+        alert("Failed to add payment.");
+        console.error(error);
+      }
     }
 
     async function deletePayment(id) {
-      await paymentsRef.doc(id).delete();
-      loadPayments();
+      try {
+        await paymentsRef.doc(id).delete();
+        loadPayments();
+      } catch (error) {
+        alert("Failed to delete payment.");
+        console.error(error);
+      }
     }
 
     function updateTracker() {
@@ -162,7 +177,10 @@
       table.innerHTML = "";
       let paidTotal = 0;
 
-      payments.forEach((p) => {
+      // Sort newest first for display
+      const sortedDisplay = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      sortedDisplay.forEach((p) => {
         paidTotal += p.amount;
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -178,12 +196,10 @@
       const progressPercent = Math.min(100, (paidTotal / totalOwed) * 100);
       document.getElementById("progressBar").style.width = progressPercent + "%";
 
-      // Start and projected end dates
-      const sorted = [...payments].sort((a, b) => new Date(a.date) - new Date(b.date));
-      const startDate = sorted.length ? new Date(sorted[0].date) : new Date("2025-10-01");
+      const startDate = payments.length ? new Date(payments[0].date) : new Date("2025-10-01");
       const monthsLeft = Math.ceil(remaining / monthlyPayment);
       const finalDate = new Date(startDate);
-      finalDate.setMonth(finalDate.getMonth() + payments.length + monthsLeft);
+      finalDate.setMonth(finalDate.getMonth() + monthsLeft);
 
       document.getElementById("summaryText").innerHTML = `
         <strong>Start:</strong> ${startDate.toLocaleDateString("en-GB")} &nbsp; | &nbsp;
