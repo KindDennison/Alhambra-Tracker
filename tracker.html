@@ -94,6 +94,51 @@
     .logout:hover {
       background: #666;
     }
+
+    /* 📱 Mobile responsiveness */
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+      .tracker {
+        padding: 1rem;
+      }
+      .input-group {
+        flex-direction: column;
+      }
+      input[type="number"],
+      input[type="date"],
+      button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 0.5rem;
+      }
+      td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        flex: 1;
+      }
+      td:last-child {
+        justify-content: flex-end;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -228,4 +273,5 @@ function updateTracker() {
   </script>
 </body>
 </html>
+
 
