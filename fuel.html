@@ -29,8 +29,8 @@
     <form id="fuelForm">
       <label>Date: <input type="date" name="date" required /></label>
       <label>Cost (£): <input type="number" name="cost" step="0.01" required /></label>
+      <label>Liters: <input type="number" name="liters" step="0.01" required /></label>
       <label>Miles Since Last Fill: <input type="number" name="miles" required /></label>
-      <label>Litres Added: <input type="number" name="litres" step="0.1" required /></label>
       <label>Notes: <input type="text" name="notes" /></label>
       <button type="submit">Add Entry</button>
     </form>
@@ -41,8 +41,10 @@
     <div class="card-grid">
       <div class="card" id="avgMPG">Avg MPG: --</div>
       <div class="card" id="avgCostPerMile">Avg £/Mile: --</div>
+      <div class="card" id="avgCostPerLiter">Avg £/Liter: --</div>
       <div class="card" id="totalMiles">Total Miles: --</div>
       <div class="card" id="totalSpend">Total Spend: --</div>
+      <div class="card" id="totalLiters">Total Liters: --</div>
     </div>
   </section>
 
@@ -59,10 +61,11 @@
         <tr>
           <th>Date</th>
           <th>Cost (£)</th>
-          <th>Litres</th>
+          <th>Liters</th>
           <th>Miles</th>
           <th>MPG</th>
           <th>£/Mile</th>
+          <th>£/L</th>
           <th>Notes</th>
           <th>Delete</th>
         </tr>
@@ -88,17 +91,19 @@
     const logBody = document.getElementById('logBody');
     const entries = [];
 
-    let mpgChartInstance = null;
-    let costChartInstance = null;
-
     form.addEventListener('submit', e => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(form));
       data.cost = parseFloat(data.cost);
+      data.liters = parseFloat(data.liters);
       data.miles = parseFloat(data.miles);
-      data.litres = parseFloat(data.litres);
-      data.mpg = data.litres > 0 ? data.miles / (data.litres / 4.546) : 0;
-      data.costPerMile = data.miles > 0 ? data.cost / data.miles : 0;
+      
+      // Calculate MPG: miles per gallon (UK gallons)
+      const gallons = data.liters / 4.546;
+      data.mpg = data.miles / gallons;
+      
+      data.costPerMile = data.cost / data.miles;
+      data.costPerLiter = data.cost / data.liters;
       data.notes = data.notes || "";
 
       db.collection("fuelLogs").add(data).then(docRef => {
@@ -110,22 +115,25 @@
 
     function updateUI() {
       logBody.innerHTML = '';
-      let totalMiles = 0, totalSpend = 0, totalMPG = 0, totalCPM = 0;
+      let totalMiles = 0, totalSpend = 0, totalLiters = 0, totalMPG = 0, totalCPM = 0, totalCPL = 0;
 
       entries.forEach(entry => {
         totalMiles += entry.miles;
         totalSpend += entry.cost;
+        totalLiters += entry.liters;
         totalMPG += entry.mpg;
         totalCPM += entry.costPerMile;
+        totalCPL += entry.costPerLiter;
 
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${entry.date}</td>
           <td>£${entry.cost.toFixed(2)}</td>
-          <td>${entry.litres.toFixed(1)}</td>
+          <td>${entry.liters.toFixed(2)}</td>
           <td>${entry.miles}</td>
           <td>${entry.mpg.toFixed(1)}</td>
           <td>£${entry.costPerMile.toFixed(2)}</td>
+          <td>£${entry.costPerLiter.toFixed(2)}</td>
           <td>${entry.notes}</td>
           <td><button onclick="deleteEntry('${entry.id}')">Delete</button></td>
         `;
@@ -134,24 +142,24 @@
 
       const avgMPG = entries.length ? totalMPG / entries.length : 0;
       const avgCPM = entries.length ? totalCPM / entries.length : 0;
+      const avgCPL = entries.length ? totalCPL / entries.length : 0;
 
       document.getElementById('avgMPG').textContent = `Avg MPG: ${avgMPG.toFixed(1)}`;
       document.getElementById('avgCostPerMile').textContent = `Avg £/Mile: £${avgCPM.toFixed(2)}`;
+      document.getElementById('avgCostPerLiter').textContent = `Avg £/Liter: £${avgCPL.toFixed(2)}`;
       document.getElementById('totalMiles').textContent = `Total Miles: ${totalMiles}`;
       document.getElementById('totalSpend').textContent = `Total Spend: £${totalSpend.toFixed(2)}`;
+      document.getElementById('totalLiters').textContent = `Total Liters: ${totalLiters.toFixed(1)}`;
 
       renderCharts();
     }
 
     function renderCharts() {
-      if (mpgChartInstance) mpgChartInstance.destroy();
-      if (costChartInstance) costChartInstance.destroy();
-
       const labels = entries.map(e => e.date);
       const mpgData = entries.map(e => e.mpg.toFixed(1));
       const costData = entries.map(e => e.cost.toFixed(2));
 
-      mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
+      new Chart(document.getElementById('mpgChart'), {
         type: 'line',
         data: {
           labels,
@@ -164,7 +172,7 @@
         }
       });
 
-      costChartInstance = new Chart(document.getElementById('costChart'), {
+      new Chart(document.getElementById('costChart'), {
         type: 'bar',
         data: {
           labels,
@@ -192,6 +200,24 @@
         const entry = doc.data();
         entry.id = doc.id;
         entry.cost = parseFloat(entry.cost);
+        entry.liters = parseFloat(entry.liters || 0);
         entry.miles = parseFloat(entry.miles);
-        entry.litres = parseFloat(entry.litres || 0);
-        entry.mpg = entry.litres > 0 ? entry.miles / (entry.l
+        
+        // Recalculate MPG if liters is available
+        if (entry.liters > 0) {
+          const gallons = entry.liters / 4.546;
+          entry.mpg = entry.miles / gallons;
+        } else {
+          // Fallback for old entries without liters
+          entry.mpg = entry.mpg || 0;
+        }
+        
+        entry.costPerMile = entry.cost / entry.miles;
+        entry.costPerLiter = entry.liters > 0 ? entry.cost / entry.liters : 0;
+        entries.push(entry);
+      });
+      updateUI();
+    });
+  </script>
+</body>
+</html>
