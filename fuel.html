@@ -94,8 +94,8 @@
       data.cost = parseFloat(data.cost);
       data.miles = parseFloat(data.miles);
       data.litres = parseFloat(data.litres);
-      data.mpg = data.miles / (data.litres / 4.546);
-      data.costPerMile = data.cost / data.miles;
+      data.mpg = data.litres > 0 ? data.miles / (data.litres / 4.546) : 0;
+      data.costPerMile = data.miles > 0 ? data.cost / data.miles : 0;
       data.notes = data.notes || "";
 
       db.collection("fuelLogs").add(data).then(docRef => {
@@ -141,6 +141,8 @@
     }
 
     function renderCharts() {
+      if (entries.length === 0) return;
+
       const labels = entries.map(e => e.date);
       const mpgData = entries.map(e => e.mpg.toFixed(1));
       const costData = entries.map(e => e.cost.toFixed(2));
@@ -187,8 +189,5 @@
         entry.id = doc.id;
         entry.cost = parseFloat(entry.cost);
         entry.miles = parseFloat(entry.miles);
-        entry.litres = parseFloat(entry.litres);
-        entry.mpg = entry.miles / (entry.litres / 4.546);
-        entry.costPerMile = entry.cost / entry.miles;
-        entries.push(entry
-
+        entry.litres = parseFloat(entry.litres || 0);
+        entry.mpg = entry.litres
