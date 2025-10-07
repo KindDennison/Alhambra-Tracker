@@ -12,7 +12,7 @@
     h1, h2 { color: #333; }
     form label { display: block; margin: 0.5rem 0; }
     input, button { padding: 0.5rem; margin-top: 0.2rem; width: 100%; max-width: 300px; }
-    button { background: #0078D4; color: white; border: none; cursor: pointer; }
+    button { background: #0078D4; color: white; border: none; cursor: pointer; border-radius: 4px; }
     button:hover { background: #005bb5; }
     .card-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
     .card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px #ccc; flex: 1; min-width: 150px; }
@@ -62,6 +62,7 @@
           <th>MPG</th>
           <th>£/Mile</th>
           <th>Notes</th>
+          <th>Delete</th>
         </tr>
       </thead>
       <tbody id="logBody"></tbody>
@@ -90,12 +91,12 @@
       const data = Object.fromEntries(new FormData(form));
       data.cost = parseFloat(data.cost);
       data.miles = parseFloat(data.miles);
-      data.mpg = data.miles / (73 / 4.546); // UK gallons
+      data.mpg = data.miles / (73 / 4.546);
       data.costPerMile = data.cost / data.miles;
       data.notes = data.notes || "";
 
-      db.collection("fuelLogs").add(data).then(() => {
-        entries.push(data);
+      db.collection("fuelLogs").add(data).then(docRef => {
+        entries.push({ ...data, id: docRef.id });
         form.reset();
         updateUI();
       });
@@ -119,6 +120,7 @@
           <td>${entry.mpg.toFixed(1)}</td>
           <td>£${entry.costPerMile.toFixed(2)}</td>
           <td>${entry.notes}</td>
+          <td><button onclick="deleteEntry('${entry.id}')">Delete</button></td>
         `;
         logBody.appendChild(row);
       });
@@ -165,9 +167,20 @@
       });
     }
 
+    function deleteEntry(id) {
+      db.collection("fuelLogs").doc(id).delete().then(() => {
+        const index = entries.findIndex(e => e.id === id);
+        if (index !== -1) {
+          entries.splice(index, 1);
+          updateUI();
+        }
+      });
+    }
+
     db.collection("fuelLogs").orderBy("date").get().then(snapshot => {
       snapshot.forEach(doc => {
         const entry = doc.data();
+        entry.id = doc.id;
         entry.cost = parseFloat(entry.cost);
         entry.miles = parseFloat(entry.miles);
         entry.mpg = entry.miles / (73 / 4.546);
