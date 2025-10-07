@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fuel Tracker – Seat Alhambra2</title>
+  <title>Fuel Tracker – Seat Alhambra</title>
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -22,7 +22,7 @@
   </style>
 </head>
 <body>
-  <h1>Fuel Tracker – Seat Alhambra2</h1>
+  <h1>Fuel Tracker – Seat Alhambra</h1>
 
   <section>
     <h2>Add Fuel Entry</h2>
@@ -73,13 +73,13 @@
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
-  authDomain: "teamdennisontracker.firebaseapp.com",
-  projectId: "teamdennisontracker",
-  storageBucket: "teamdennisontracker.firebasestorage.app",
-  messagingSenderId: "915336870349",
-  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
-};
+      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+      authDomain: "teamdennisontracker.firebaseapp.com",
+      projectId: "teamdennisontracker",
+      storageBucket: "teamdennisontracker.firebasestorage.app",
+      messagingSenderId: "915336870349",
+      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -87,6 +87,9 @@
     const form = document.getElementById('fuelForm');
     const logBody = document.getElementById('logBody');
     const entries = [];
+
+    let mpgChartInstance = null;
+    let costChartInstance = null;
 
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -141,11 +144,14 @@
     }
 
     function renderCharts() {
+      if (mpgChartInstance) mpgChartInstance.destroy();
+      if (costChartInstance) costChartInstance.destroy();
+
       const labels = entries.map(e => e.date);
       const mpgData = entries.map(e => e.mpg.toFixed(1));
       const costData = entries.map(e => e.cost.toFixed(2));
 
-      new Chart(document.getElementById('mpgChart'), {
+      mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
         type: 'line',
         data: {
           labels,
@@ -158,7 +164,7 @@
         }
       });
 
-      new Chart(document.getElementById('costChart'), {
+      costChartInstance = new Chart(document.getElementById('costChart'), {
         type: 'bar',
         data: {
           labels,
@@ -188,6 +194,4 @@
         entry.cost = parseFloat(entry.cost);
         entry.miles = parseFloat(entry.miles);
         entry.litres = parseFloat(entry.litres || 0);
-        entry.mpg = entry.litres > 0 ? entry.miles / (entry.litres / 4.546) : 0;
-        entry.costPer
-
+        entry.mpg = entry.litres > 0 ? entry.miles / (entry.l
