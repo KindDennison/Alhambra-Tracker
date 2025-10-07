@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuel Tracker – Seat Alhambra</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
+    h1, h2 { color: #333; }
+    form label { display: block; margin: 0.5rem 0; }
+    input, button { padding: 0.5rem; margin-top: 0.2rem; width: 100%; max-width: 300px; }
+    button { background: #0078D4; color: white; border: none; cursor: pointer; }
+    .card-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+    .card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px #ccc; flex: 1; min-width: 150px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+    canvas { max-width: 100%; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Fuel Tracker – Seat Alhambra</h1>
+
+  <section>
+    <h2>Add Fuel Entry</h2>
+    <form id="fuelForm">
+      <label>Date: <input type="date" name="date" required /></label>
+      <label>Cost (£): <input type="number" name="cost" step="0.01" required /></label>
+      <label>Miles Since Last Fill: <input type="number" name="miles" required /></label>
+      <label>Notes: <input type="text" name="notes" /></label>
+      <button type="submit">Add Entry</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Summary</h2>
+    <div class="card-grid">
+      <div class="card" id="avgMPG">Avg MPG: --</div>
+      <div class="card" id="avgCostPerMile">Avg £/Mile: --</div>
+      <div class="card" id="totalMiles">Total Miles: --</div>
+      <div class="card" id="totalSpend">Total Spend: --</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Charts</h2>
+    <canvas id="mpgChart"></canvas>
+    <canvas id="costChart"></canvas>
+  </section>
+
+  <section>
+    <h2>Fuel Log</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Cost (£)</th>
+          <th>Miles</th>
+          <th>MPG</th>
+          <th>£/Mile</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </section>
+
+  <script>
+    const form = document.getElementById('fuelForm');
+    const logBody = document.getElementById('logBody');
+    const entries = [];
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      data.cost = parseFloat(data.cost);
+      data.miles = parseFloat(data.miles);
+      data.mpg = data.miles / (73 / 4.546); // UK gallons
+      data.costPerMile = data.cost / data.miles;
+      entries.push(data);
+      form.reset();
+      updateUI();
+    });
+
+    function updateUI() {
+      logBody.innerHTML = '';
+      let totalMiles = 0, totalSpend = 0, totalMPG = 0, totalCPM = 0;
+
+      entries.forEach(entry => {
+        totalMiles += entry.miles;
+        totalSpend += entry.cost;
+        totalMPG += entry.mpg;
+        totalCPM += entry.costPerMile;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.date}</td>
+          <td>£${entry.cost.toFixed(2)}</td>
+          <td>${entry.miles}</td>
+          <td>${entry.mpg.toFixed(1)}</td>
+          <td>£${entry.costPerMile.toFixed(2)}</td>
+          <td>${entry.notes || ''}</td>
+        `;
+        logBody.appendChild(row);
+      });
+
+      const avgMPG = entries.length ? totalMPG / entries.length : 0;
+      const avgCPM = entries.length ? totalCPM / entries.length : 0;
+
+      document.getElementById('avgMPG').textContent = `Avg MPG: ${avgMPG.toFixed(1)}`;
+      document.getElementById('avgCostPerMile').textContent = `Avg £/Mile: £${avgCPM.toFixed(2)}`;
+      document.getElementById('totalMiles').textContent = `Total Miles: ${totalMiles}`;
+      document.getElementById('totalSpend').textContent = `Total Spend: £${totalSpend.toFixed(2)}`;
+
+      renderCharts();
+    }
+
+    function renderCharts() {
+      const labels = entries.map(e => e.date);
+      const mpgData = entries.map(e => e.mpg.toFixed(1));
+      const costData = entries.map(e => e.cost.toFixed(2));
+
+      new Chart(document.getElementById('mpgChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'MPG',
+            data: mpgData,
+            borderColor: '#0078D4',
+            fill: false
+          }]
+        }
+      });
+
+      new Chart(document.getElementById('costChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Cost (£)',
+            data: costData,
+            backgroundColor: '#0078D4'
+          }]
+        }
+      });
+    }
+  </script>
+</body>
+</html>
