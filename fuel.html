@@ -30,6 +30,7 @@
       <label>Date: <input type="date" name="date" required /></label>
       <label>Cost (£): <input type="number" name="cost" step="0.01" required /></label>
       <label>Miles Since Last Fill: <input type="number" name="miles" required /></label>
+      <label>Litres Added: <input type="number" name="litres" step="0.1" required /></label>
       <label>Notes: <input type="text" name="notes" /></label>
       <button type="submit">Add Entry</button>
     </form>
@@ -58,6 +59,7 @@
         <tr>
           <th>Date</th>
           <th>Cost (£)</th>
+          <th>Litres</th>
           <th>Miles</th>
           <th>MPG</th>
           <th>£/Mile</th>
@@ -91,7 +93,8 @@
       const data = Object.fromEntries(new FormData(form));
       data.cost = parseFloat(data.cost);
       data.miles = parseFloat(data.miles);
-      data.mpg = data.miles / (73 / 4.546);
+      data.litres = parseFloat(data.litres);
+      data.mpg = data.miles / (data.litres / 4.546);
       data.costPerMile = data.cost / data.miles;
       data.notes = data.notes || "";
 
@@ -116,6 +119,7 @@
         row.innerHTML = `
           <td>${entry.date}</td>
           <td>£${entry.cost.toFixed(2)}</td>
+          <td>${entry.litres.toFixed(1)}</td>
           <td>${entry.miles}</td>
           <td>${entry.mpg.toFixed(1)}</td>
           <td>£${entry.costPerMile.toFixed(2)}</td>
@@ -183,12 +187,7 @@
         entry.id = doc.id;
         entry.cost = parseFloat(entry.cost);
         entry.miles = parseFloat(entry.miles);
-        entry.mpg = entry.miles / (73 / 4.546);
+        entry.litres = parseFloat(entry.litres);
+        entry.mpg = entry.miles / (entry.litres / 4.546);
         entry.costPerMile = entry.cost / entry.miles;
-        entries.push(entry);
-      });
-      updateUI();
-    });
-  </script>
-</body>
-</html>
+        entries.push(entry
