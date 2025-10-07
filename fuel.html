@@ -117,7 +117,10 @@
       logBody.innerHTML = '';
       let totalMiles = 0, totalSpend = 0, totalLiters = 0, totalMPG = 0, totalCPM = 0, totalCPL = 0;
 
-      entries.forEach(entry => {
+      // Sort entries by date (newest first)
+      const sortedEntries = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      sortedEntries.forEach(entry => {
         totalMiles += entry.miles;
         totalSpend += entry.cost;
         totalLiters += entry.liters;
@@ -125,9 +128,16 @@
         totalCPM += entry.costPerMile;
         totalCPL += entry.costPerLiter;
 
+        // Format date as dd/mm/yy
+        const dateObj = new Date(entry.date);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = String(dateObj.getFullYear()).slice(-2);
+        const formattedDate = `${day}/${month}/${year}`;
+
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${entry.date}</td>
+          <td>${formattedDate}</td>
           <td>£${entry.cost.toFixed(2)}</td>
           <td>${entry.liters.toFixed(2)}</td>
           <td>${entry.miles}</td>
