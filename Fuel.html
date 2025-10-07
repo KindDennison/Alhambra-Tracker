@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fuel Tracker – Seat Alhambra</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
@@ -11,6 +13,7 @@
     form label { display: block; margin: 0.5rem 0; }
     input, button { padding: 0.5rem; margin-top: 0.2rem; width: 100%; max-width: 300px; }
     button { background: #0078D4; color: white; border: none; cursor: pointer; }
+    button:hover { background: #005bb5; }
     .card-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
     .card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px #ccc; flex: 1; min-width: 150px; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -66,6 +69,18 @@
   </section>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+      authDomain: "teamdennisontracker.firebaseapp.com",
+      projectId: "teamdennisontracker",
+      storageBucket: "teamdennisontracker.firebasestorage.app",
+      messagingSenderId: "915336870349",
+      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const form = document.getElementById('fuelForm');
     const logBody = document.getElementById('logBody');
     const entries = [];
@@ -77,9 +92,13 @@
       data.miles = parseFloat(data.miles);
       data.mpg = data.miles / (73 / 4.546); // UK gallons
       data.costPerMile = data.cost / data.miles;
-      entries.push(data);
-      form.reset();
-      updateUI();
+      data.notes = data.notes || "";
+
+      db.collection("fuelLogs").add(data).then(() => {
+        entries.push(data);
+        form.reset();
+        updateUI();
+      });
     });
 
     function updateUI() {
@@ -99,7 +118,7 @@
           <td>${entry.miles}</td>
           <td>${entry.mpg.toFixed(1)}</td>
           <td>£${entry.costPerMile.toFixed(2)}</td>
-          <td>${entry.notes || ''}</td>
+          <td>${entry.notes}</td>
         `;
         logBody.appendChild(row);
       });
@@ -145,6 +164,18 @@
         }
       });
     }
+
+    db.collection("fuelLogs").orderBy("date").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const entry = doc.data();
+        entry.cost = parseFloat(entry.cost);
+        entry.miles = parseFloat(entry.miles);
+        entry.mpg = entry.miles / (73 / 4.546);
+        entry.costPerMile = entry.cost / entry.miles;
+        entries.push(entry);
+      });
+      updateUI();
+    });
   </script>
 </body>
 </html>
