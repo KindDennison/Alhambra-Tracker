@@ -34,6 +34,8 @@
       border: none;
       cursor: pointer;
       border-radius: 4px;
+      margin: 0.5rem;
+      width: 80%;
     }
     button:hover {
       background: #003f7f;
@@ -45,19 +47,20 @@
     <h2>Alhambra Tracker</h2>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
+    <button onclick="login()">Login to Tracker</button>
+    <button onclick="goToFuel()">Record Fuel</button>
     <p id="error" style="color:red;"></p>
   </div>
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
-  authDomain: "teamdennisontracker.firebaseapp.com",
-  projectId: "teamdennisontracker",
-  storageBucket: "teamdennisontracker.firebasestorage.app",
-  messagingSenderId: "915336870349",
-  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
-};
+      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+      authDomain: "teamdennisontracker.firebaseapp.com",
+      projectId: "teamdennisontracker",
+      storageBucket: "teamdennisontracker.firebasestorage.app",
+      messagingSenderId: "915336870349",
+      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+    };
 
     firebase.initializeApp(firebaseConfig);
 
@@ -67,6 +70,10 @@
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => window.location.href = "tracker.html")
         .catch(err => document.getElementById("error").textContent = err.message);
+    }
+
+    function goToFuel() {
+      window.location.href = "fuel.html";
     }
   </script>
 </body>
