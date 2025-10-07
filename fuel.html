@@ -73,13 +73,13 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
-      authDomain: "teamdennisontracker.firebaseapp.com",
-      projectId: "teamdennisontracker",
-      storageBucket: "teamdennisontracker.firebasestorage.app",
-      messagingSenderId: "915336870349",
-      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
-    };
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -141,8 +141,6 @@
     }
 
     function renderCharts() {
-      if (entries.length === 0) return;
-
       const labels = entries.map(e => e.date);
       const mpgData = entries.map(e => e.mpg.toFixed(1));
       const costData = entries.map(e => e.cost.toFixed(2));
@@ -190,4 +188,5 @@
         entry.cost = parseFloat(entry.cost);
         entry.miles = parseFloat(entry.miles);
         entry.litres = parseFloat(entry.litres || 0);
-        entry.mpg = entry.litres
+        entry.mpg = entry.litres > 0 ? entry.miles / (entry.litres / 4.546) : 0;
+        entry.costPer
