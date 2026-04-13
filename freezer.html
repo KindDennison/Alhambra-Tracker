@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Freezer Inventory</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
   <style>
     * {
       margin: 0;
@@ -30,6 +32,30 @@
       color: #0055a5;
       text-align: center;
       margin-bottom: 2rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .back-button {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .back-button:hover {
+      background: #5a6268;
     }
 
     /* Freezer Selection Screen */
@@ -85,24 +111,6 @@
       display: block;
     }
 
-    .back-button {
-      display: inline-block;
-      margin-bottom: 2rem;
-      padding: 10px 20px;
-      background: #6c757d;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 4px;
-      text-decoration: none;
-      transition: background 0.3s ease;
-      font-size: 1rem;
-    }
-
-    .back-button:hover {
-      background: #5a6268;
-    }
-
     .freezer-header {
       text-align: center;
       margin-bottom: 2rem;
@@ -156,7 +164,7 @@
       border-radius: 4px;
       border-left: 4px solid #0055a5;
       display: flex;
-      justify-content: space-between;\
+      justify-content: space-between;
       align-items: center;
       font-size: 0.95rem;
     }
@@ -219,7 +227,7 @@
       font-size: 0.9rem;
     }
 
-    .form-group input,\
+    .form-group input,
     .form-group textarea {
       width: 100%;
       padding: 0.6rem;
@@ -227,6 +235,7 @@
       border-radius: 4px;
       font-family: Arial, sans-serif;
       font-size: 0.9rem;
+      box-sizing: border-box;
     }
 
     .form-group textarea {
@@ -251,15 +260,7 @@
       background: #003f7f;
     }
 
-    .home-freezer-icon::before {
-      content: "🏠 ";
-    }
-
-    .shed-freezer-icon::before {
-      content: "🏚️ ";
-    }
-
-    /* Back to main button on bottom */
+    /* Navigation */
     .navigation {
       text-align: center;
       margin-top: 2rem;
@@ -292,14 +293,29 @@
     .nav-button.apps:hover {
       background: #003f7f;
     }
+
+    p {
+      text-align: center;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .drawers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <!-- Main Freezer Selection Screen -->
     <div id="mainScreen" class="freezer-selector-screen">
-      <h1>Freezer Inventory</h1>
-      <p style="text-align: center; margin-bottom: 2rem; color: #666;">Select a freezer to view and manage its contents</p>
+      <div class="header">
+        <h1>Freezer Inventory</h1>
+        <a href="index.html" class="back-button">Back to Apps</a>
+      </div>
+      <p>Select a freezer to view and manage its contents</p>
       
       <div class="freezer-selector">
         <div class="freezer-card" onclick="selectFreezer('house')">
@@ -317,10 +333,10 @@
 
     <!-- Freezer Details Screen -->
     <div id="detailsScreen" class="freezer-details">
-      <button class="back-button" onclick="backToMain()">Back to Freezer Selection</button>
-      
-      <div class="freezer-header">
-        <h2 id="freezerTitle"></h2>
+      <div class="header">
+        <button class="back-button" onclick="backToMain()">Back to Freezers</button>
+        <h1 id="freezerTitle"></h1>
+        <a href="index.html" class="back-button">Back to Apps</a>
       </div>
 
       <div class="drawers-grid" id="drawersContainer"></div>
@@ -333,76 +349,83 @@
   </div>
 
   <script>
-    // Initialize data from localStorage
-    function initializeData() {
-      if (!localStorage.getItem('freezerData')) {
-        const defaultData = {
-          house: {
-            drawer1: [],
-            drawer2: [],
-            drawer3: []
-          },
-          shed: {
-            drawer1: [],
-            drawer2: [],
-            drawer3: []
-          }
-        };
-        localStorage.setItem('freezerData', JSON.stringify(defaultData));
-      }
-    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+      authDomain: "teamdennisontracker.firebaseapp.com",
+      projectId: "teamdennisontracker",
+      storageBucket: "teamdennisontracker.firebasestorage.app",
+      messagingSenderId: "915336870349",
+      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+    };
 
-    // Get all data
-    function getData() {
-      return JSON.parse(localStorage.getItem('freezerData'));
-    }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // Save data
-    function saveData(data) {
-      localStorage.setItem('freezerData', JSON.stringify(data));
-    }
+    let currentFreezer = null;
 
     // Select a freezer
     function selectFreezer(freezerType) {
-      const data = getData();
-      const freezerData = data[freezerType];
-      
+      currentFreezer = freezerType;
       document.getElementById('mainScreen').style.display = 'none';
       document.getElementById('detailsScreen').classList.add('active');
       
       const title = freezerType === 'house' ? 'House Freezer' : 'Shed Freezer';
       document.getElementById('freezerTitle').textContent = title;
 
-      // Render drawers
+      renderFreezerContents(freezerType);
+    }
+
+    // Render freezer contents from Firebase
+    function renderFreezerContents(freezerType) {
       const drawersContainer = document.getElementById('drawersContainer');
       drawersContainer.innerHTML = '';
 
-      for (let i = 1; i <= 3; i++) {
-        const drawerKey = 'drawer' + i;
-        const drawerItems = freezerData[drawerKey];
-        
-        const drawerHTML = createDrawerCard(freezerType, drawerKey, i, drawerItems);
-        drawersContainer.innerHTML += drawerHTML;
-      }
+      // Listen to Firebase for real-time updates
+      db.collection('freezerInventory')
+        .where('freezer', '==', freezerType)
+        .orderBy('timestamp', 'asc')
+        .onSnapshot((snapshot) => {
+          const itemsByDrawer = {
+            drawer1: [],
+            drawer2: [],
+            drawer3: []
+          };
 
-      // Add event listeners to delete buttons
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const freezer = this.dataset.freezer;
-          const drawer = this.dataset.drawer;
-          const index = this.dataset.index;
-          deleteItem(freezer, drawer, index);
-        });
-      });
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const drawer = data.drawer;
+            if (itemsByDrawer[drawer]) {
+              itemsByDrawer[drawer].push({ id: doc.id, ...data });
+            }
+          });
 
-      // Add event listeners to add buttons
-      document.querySelectorAll('.add-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const freezer = this.dataset.freezer;
-          const drawer = this.dataset.drawer;
-          addItem(freezer, drawer);
+          drawersContainer.innerHTML = '';
+
+          for (let i = 1; i <= 3; i++) {
+            const drawerKey = 'drawer' + i;
+            const drawerItems = itemsByDrawer[drawerKey];
+            
+            const drawerHTML = createDrawerCard(freezerType, drawerKey, i, drawerItems);
+            drawersContainer.innerHTML += drawerHTML;
+          }
+
+          // Add event listeners to delete buttons
+          document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const itemId = this.dataset.id;
+              deleteItem(itemId);
+            });
+          });
+
+          // Add event listeners to add buttons
+          document.querySelectorAll('.add-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const freezer = this.dataset.freezer;
+              const drawer = this.dataset.drawer;
+              addItem(freezer, drawer);
+            });
+          });
         });
-      });
     }
 
     // Create drawer card HTML
@@ -412,8 +435,8 @@
       if (items.length === 0) {
         itemsHTML = '<div class="empty-message">No items in this drawer</div>';
       } else {
-        items.forEach((item, index) => {
-          const dateAdded = item.dateAdded ? new Date(item.dateAdded).toLocaleDateString() : 'No date';
+        items.forEach((item) => {
+          const dateAdded = item.dateAdded ? new Date(item.dateAdded.toDate()).toLocaleDateString() : 'No date';
           itemsHTML += `
             <div class="item">
               <div class="item-text">
@@ -421,7 +444,7 @@
                 ${item.description ? '<br><small>' + item.description + '</small>' : ''}
               </div>
               <span class="item-date">${dateAdded}</span>
-              <button class="delete-btn" data-freezer="${freezerType}" data-drawer="${drawerKey}" data-index="${index}">Delete</button>
+              <button class="delete-btn" data-id="${item.id}">Delete</button>
             </div>
           `;
         });
@@ -449,8 +472,8 @@
       `;
     }
 
-    // Add item to drawer
-    function addItem(freezerType, drawerKey) {
+    // Add item to Firebase
+    async function addItem(freezerType, drawerKey) {
       const nameInput = document.getElementById('itemName_' + drawerKey);
       const descInput = document.getElementById('itemDesc_' + drawerKey);
       
@@ -462,31 +485,34 @@
         return;
       }
 
-      const data = getData();
-      const newItem = {
-        name: itemName,
-        description: itemDesc,
-        dateAdded: new Date().toISOString()
-      };
+      try {
+        await db.collection('freezerInventory').add({
+          freezer: freezerType,
+          drawer: drawerKey,
+          name: itemName,
+          description: itemDesc,
+          dateAdded: firebase.firestore.FieldValue.serverTimestamp(),
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-      data[freezerType][drawerKey].push(newItem);
-      saveData(data);
-
-      // Clear inputs
-      nameInput.value = '';
-      descInput.value = '';
-
-      // Refresh display
-      selectFreezer(freezerType);
+        // Clear inputs
+        nameInput.value = '';
+        descInput.value = '';
+      } catch (error) {
+        console.error("Error adding item: ", error);
+        alert('Failed to add item. Please try again.');
+      }
     }
 
-    // Delete item from drawer
-    function deleteItem(freezerType, drawerKey, index) {
+    // Delete item from Firebase
+    async function deleteItem(itemId) {
       if (confirm('Are you sure you want to delete this item?')) {
-        const data = getData();
-        data[freezerType][drawerKey].splice(index, 1);
-        saveData(data);
-        selectFreezer(freezerType);
+        try {
+          await db.collection('freezerInventory').doc(itemId).delete();
+        } catch (error) {
+          console.error("Error deleting item: ", error);
+          alert('Failed to delete item. Please try again.');
+        }
       }
     }
 
@@ -494,12 +520,8 @@
     function backToMain() {
       document.getElementById('mainScreen').style.display = 'grid';
       document.getElementById('detailsScreen').classList.remove('active');
+      currentFreezer = null;
     }
-
-    // Initialize on page load
-    window.addEventListener('load', function() {
-      initializeData();
-    });
   </script>
 </body>
 </html>
