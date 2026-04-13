@@ -399,7 +399,7 @@
           <option value="">Select Side</option>
           <option value="Left">Left</option>
           <option value="Right">Right</option>
-          <option value="Both">Both</option>
+          <option value="End">End</option>
         </select>
 
         <button type="submit">Add Item</button>
@@ -467,7 +467,7 @@
           <option value="">Select Side</option>
           <option value="Left">Left</option>
           <option value="Right">Right</option>
-          <option value="Both">Both</option>
+          <option value="End">End</option>
         </select>
 
         <div class="modal-buttons">
@@ -889,14 +889,14 @@
           let itemX;
           
           let sideToUse = item.side;
-          if (direction === 'DOWN' && item.side !== 'Both') {
+          if (direction === 'DOWN' && item.side !== 'End') {
             sideToUse = item.side === 'Left' ? 'Right' : 'Left';
           }
           
           if (sideToUse === 'Left') {
-              itemX = xStart + (individualAisleWidth * 0.30);
+              itemX = xStart + (individualAisleWidth * 0.25);
           } else if (sideToUse === 'Right') {
-              itemX = xStart + (individualAisleWidth * 0.70);
+              itemX = xStart + (individualAisleWidth * 0.75);
           } else {
               itemX = xCenter;
           }
