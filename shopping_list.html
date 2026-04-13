@@ -129,16 +129,16 @@
       background: #f9f9f9;
       border-radius: 8px;
       border: 2px solid #e9ecef;
-      text-align: center; /* Center the canvas */
+      text-align: center;
     }
     .floor-plan-canvas {
       width: 100%;
-      max-width: 800px; /* Limit max width for better readability */
+      max-width: 800px;
       border: 2px solid #0055a5;
       border-radius: 4px;
       background: white;
       display: block;
-      margin: 0 auto; /* Center the canvas horizontally */
+      margin: 0 auto;
     }
     .route-guide {
       margin-top: 20px;
@@ -511,7 +511,6 @@
         document.getElementById(`${tabName}-tab`).classList.add('active');
         
         if (tabName === 'route') {
-          // Give canvas a moment to render before drawing
           setTimeout(() => drawFloorPlan(), 100); 
         }
       });
@@ -732,20 +731,19 @@
           allShoppingItems.push({ id: doc.id, ...doc.data() });
         });
         renderShoppingList(allShoppingItems);
-        renderRouteGuide(allShoppingItems); // Update route guide when list changes
+        renderRouteGuide(allShoppingItems);
         if (document.getElementById('route-tab').classList.contains('active')) {
-            drawFloorPlan(); // Redraw map if tab is active
+            drawFloorPlan();
         }
       }, (error) => {
         console.error("Error fetching shopping list: ", error);
       });
 
-    // Floor Plan Drawing Function (UPDATED)
+    // Floor Plan Drawing Function (UPDATED WITH NEW AISLE LAYOUT)
     function drawFloorPlan() {
       const canvas = floorPlanCanvas;
       const ctx = canvas.getContext('2d');
       
-      // Adjust canvas size for responsiveness
       canvas.width = canvas.offsetWidth;
       canvas.height = Math.max(400, canvas.offsetWidth * 0.6);
 
@@ -774,36 +772,31 @@
         { number: 1, direction: 'UP' }
       ];
 
-      // Aisle positions from left to right
       const numAisles = aisles.length;
-      const aisleXPositions = [];
-      const aisleSpacing = width / (numAisles + 1);
-      
+      const aisleGap = 15;
+      const totalAisleWidth = width - (numAisles - 1) * aisleGap;
+      const individualAisleWidth = totalAisleWidth / numAisles;
+
+      const aisleXStarts = [];
       for (let i = 0; i < numAisles; i++) {
-        aisleXPositions.push(padding + (i + 1) * aisleSpacing);
+        aisleXStarts.push(padding + i * (individualAisleWidth + aisleGap));
       }
 
-      // Draw aisle lines and labels
-      aisleXPositions.forEach((xCenter, i) => {
-        const halfAisleWidth = width * 0.08; // Aisle thickness
+      // Draw each aisle as a distinct rectangle
+      aisleXStarts.forEach((xStart, i) => {
         const aisleInfo = aisles[i];
-        
-        // Vertical aisle lines
-        ctx.strokeStyle = '#999'; // A darker grey
-        ctx.lineWidth = 4;        // Thicker lines
-        ctx.beginPath();
-        ctx.moveTo(xCenter - halfAisleWidth, padding);
-        ctx.lineTo(xCenter - halfAisleWidth, padding + height);
-        ctx.moveTo(xCenter + halfAisleWidth, padding);
-        ctx.lineTo(xCenter + halfAisleWidth, padding + height);
-        ctx.stroke();
+        const xCenter = xStart + individualAisleWidth / 2;
 
-        // Draw aisle number circle at top
+        // Draw aisle background
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(xStart, padding, individualAisleWidth, height);
+
+        // Draw aisle number circle at top, centered within the aisle block
         ctx.fillStyle = '#0055a5';
         ctx.beginPath();
         ctx.arc(xCenter, padding - 15, 12, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.fillStyle = 'white';
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
@@ -814,9 +807,8 @@
         ctx.strokeStyle = '#0055a5';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        
+
         if (aisleInfo.direction === 'UP') {
-          // Arrow pointing up
           const arrowBaseY = padding + height * 0.7;
           const arrowTopY = padding + height * 0.3;
           ctx.moveTo(xCenter, arrowBaseY);
@@ -825,7 +817,6 @@
           ctx.moveTo(xCenter, arrowTopY);
           ctx.lineTo(xCenter + 6, arrowTopY + 8);
         } else {
-          // Arrow pointing down
           const arrowTopY = padding + height * 0.3;
           const arrowBaseY = padding + height * 0.7;
           ctx.moveTo(xCenter, arrowTopY);
@@ -837,8 +828,20 @@
         ctx.stroke();
       });
 
-      // Entry point (bottom right, at Isle 1)
-      const entryX = aisleXPositions[4]; // Isle 1 position (rightmost)
+      // Draw distinct separation lines between aisles
+      for (let i = 0; i < numAisles - 1; i++) {
+        const separatorX = aisleXStarts[i] + individualAisleWidth + aisleGap / 2;
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(separatorX, padding);
+        ctx.lineTo(separatorX, padding + height);
+        ctx.stroke();
+      }
+
+      // Entry point (bottom center of Isle 1)
+      const entryAisleIndex = aisles.findIndex(a => a.number === 1);
+      const entryX = aisleXStarts[entryAisleIndex] + individualAisleWidth / 2;
       const entryY = padding + height + 20;
       ctx.fillStyle = '#ff6b6b';
       ctx.beginPath();
@@ -874,30 +877,27 @@
       const itemPositions = [];
       
       unpurchasedItems.forEach((item, index) => {
-        // Find the aisle configuration for this item's isle
         const aisleConfig = aisles.find(aisle => aisle.number === item.isle);
         
         if (aisleConfig) {
-          // Find the index of this aisle in the aisles array to get its X position
           const aisleIndex = aisles.findIndex(aisle => aisle.number === item.isle);
-          const xCenter = aisleXPositions[aisleIndex];
+          const xStart = aisleXStarts[aisleIndex];
+          const xCenter = xStart + individualAisleWidth / 2;
           const direction = aisleConfig.direction;
-          const halfAisleWidth = width * 0.08;
           
           // Determine X position based on side
           let itemX;
           
-          // For DOWN aisles, flip Left/Right to match user's perspective
           let sideToUse = item.side;
           if (direction === 'DOWN' && item.side !== 'Both') {
             sideToUse = item.side === 'Left' ? 'Right' : 'Left';
           }
           
           if (sideToUse === 'Left') {
-              itemX = xCenter - halfAisleWidth - 8;
+              itemX = xStart + (individualAisleWidth * 0.30);
           } else if (sideToUse === 'Right') {
-              itemX = xCenter + halfAisleWidth + 8;
-          } else { 
+              itemX = xStart + (individualAisleWidth * 0.70);
+          } else {
               itemX = xCenter;
           }
 
@@ -907,7 +907,7 @@
             itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
           } else if (item.position === 'Middle') {
             itemY = padding + height / 2;
-          } else { // End
+          } else {
             itemY = (direction === 'UP') ? (padding + 20) : (padding + height - 20);
           }
           
@@ -945,7 +945,6 @@
         ctx.fillText(pos.index + 1, pos.x, pos.y);
       });
 
-      // Make canvas responsive
       if (!window.floorPlanResizeListener) {
         window.floorPlanResizeListener = true;
         window.addEventListener('resize', () => {
