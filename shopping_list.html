@@ -26,6 +26,35 @@
       color: #0055a5;
       margin-bottom: 20px;
     }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .tab-button.active {
+      color: #0055a5;
+      border-bottom-color: #0055a5;
+    }
+    .tab-button:hover {
+      color: #0055a5;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
     form label {
       display: block;
       margin-bottom: 5px;
@@ -68,7 +97,7 @@
       align-items: center;
     }
     .item-card.purchased {
-        background: #e6ffe6; /* Light green for purchased items */
+        background: #e6ffe6;
         text-decoration: line-through;
         color: #666;
     }
@@ -83,21 +112,137 @@
         gap: 5px;
     }
     .item-card .delete-button {
-        background-color: #dc3545; /* Red for delete */
+        background-color: #dc3545;
     }
     .item-card .delete-button:hover {
         background-color: #c82333;
     }
     .item-card .purchased-button {
-        background-color: #28a745; /* Green for purchased */
+        background-color: #28a745;
     }
     .item-card .purchased-button:hover {
         background-color: #218838;
+    }
+    .item-card .edit-button {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .item-card .edit-button:hover {
+        background-color: #e0a800;
     }
     .no-items {
         text-align: center;
         color: #666;
         padding: 20px;
+    }
+    .template-card {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .template-card .info {
+      flex: 1;
+    }
+    .template-card button {
+      width: auto;
+      padding: 5px 10px;
+      margin-left: 10px;
+      font-size: 0.8rem;
+    }
+    .template-card .edit-button {
+      background-color: #ffc107;
+      color: #000;
+    }
+    .template-card .edit-button:hover {
+      background-color: #e0a800;
+    }
+    .template-card .delete-button {
+      background-color: #dc3545;
+    }
+    .template-card .delete-button:hover {
+      background-color: #c82333;
+    }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+    .modal.show {
+      display: block;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .modal-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #0055a5;
+    }
+    .modal-close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .modal-close:hover {
+      color: #000;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 10px;
+    }
+    .cancel-button {
+      background-color: #6c757d;
+    }
+    .cancel-button:hover {
+      background-color: #5a6268;
+    }
+    .autocomplete-suggestions {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      max-height: 150px;
+      overflow-y: auto;
+      width: calc(100% - 22px);
+      z-index: 999;
+      border-radius: 0 0 4px 4px;
+    }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+    .form-group {
+      position: relative;
+      margin-bottom: 15px;
     }
   </style>
 </head>
@@ -105,43 +250,97 @@
   <div class="container">
     <h1>Shopping List</h1>
 
-    <form id="addItemForm">
-      <label for="itemName">Item Name:</label>
-      <input type="text" id="itemName" placeholder="e.g., Apples" required />
+    <div class="tabs">
+      <button class="tab-button active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button" data-tab="templates">Item Templates</button>
+    </div>
 
-      <label for="itemIsle">Isle:</label>
-      <input type="text" id="itemIsle" placeholder="e.g., 1" required />
+    <!-- Shopping List Tab -->
+    <div class="tab-content active" id="shopping-tab">
+      <form id="addItemForm">
+        <label for="itemName">Item Name:</label>
+        <div class="form-group">
+          <input type="text" id="itemName" placeholder="e.g., Apples" required />
+          <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
+        </div>
 
-      <label for="itemPosition">Position:</label>
-      <select id="itemPosition" required>
-        <option value="">Select Position</option>
-        <option value="Start of Isle">Start of Isle</option>
-        <option value="Middle of Isle">Middle of Isle</option>
-        <option value="End of Isle">End of Isle</option>
-      </select>
+        <label for="itemIsle">Isle:</label>
+        <input type="text" id="itemIsle" placeholder="e.g., 1" required />
 
-      <label for="itemSide">Side:</label>
-      <select id="itemSide" required>
-        <option value="">Select Side</option>
-        <option value="Left">Left</option>
-        <option value="Right">Right</option>
-        <option value="Both">Both</option>
-      </select>
+        <label for="itemPosition">Position:</label>
+        <select id="itemPosition" required>
+          <option value="">Select Position</option>
+          <option value="Start of Isle">Start of Isle</option>
+          <option value="Middle of Isle">Middle of Isle</option>
+          <option value="End of Isle">End of Isle</option>
+        </select>
 
-      <button type="submit">Add Item</button>
-    </form>
+        <label for="itemSide">Side:</label>
+        <select id="itemSide" required>
+          <option value="">Select Side</option>
+          <option value="Left">Left</option>
+          <option value="Right">Right</option>
+          <option value="Both">Both</option>
+        </select>
 
-    <div id="shoppingListDisplay">
-      <h2>Your List</h2>
-      <div id="itemsContainer">
-        <!-- Shopping list items will be loaded here -->
-        <p class="no-items">No items in your list yet. Add some above!</p>
+        <button type="submit">Add Item</button>
+      </form>
+
+      <div id="shoppingListDisplay">
+        <h2>Your List</h2>
+        <div id="itemsContainer">
+          <p class="no-items">No items in your list yet. Add some above!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item Templates Tab -->
+    <div class="tab-content" id="templates-tab">
+      <h2>Manage Item Templates</h2>
+      <p style="color: #666; margin-bottom: 20px;">These are saved item locations. When you add an item to your shopping list, it will auto-populate with the stored location.</p>
+      <div id="templatesContainer">
+        <p class="no-items">No item templates yet. Add items to your shopping list to create templates!</p>
       </div>
     </div>
   </div>
 
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div class="modal-header">Edit Item Location</div>
+      <form id="editForm">
+        <label for="editItemName">Item Name:</label>
+        <input type="text" id="editItemName" disabled />
+
+        <label for="editItemIsle">Isle:</label>
+        <input type="text" id="editItemIsle" required />
+
+        <label for="editItemPosition">Position:</label>
+        <select id="editItemPosition" required>
+          <option value="">Select Position</option>
+          <option value="Start of Isle">Start of Isle</option>
+          <option value="Middle of Isle">Middle of Isle</option>
+          <option value="End of Isle">End of Isle</option>
+        </select>
+
+        <label for="editItemSide">Side:</label>
+        <select id="editItemSide" required>
+          <option value="">Select Side</option>
+          <option value="Left">Left</option>
+          <option value="Right">Right</option>
+          <option value="Both">Both</option>
+        </select>
+
+        <div class="modal-buttons">
+          <button type="button" class="cancel-button" id="cancelEditButton">Cancel</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    // Your Firebase config (from index.html and fuel.html)
     const firebaseConfig = {
       apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
       authDomain: "teamdennisontracker.firebaseapp.com",
@@ -151,21 +350,113 @@
       appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(); // Get a reference to the Firestore database
+    const db = firebase.firestore();
 
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabName = button.dataset.tab;
+        
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        button.classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+      });
+    });
+
+    // Modal setup
+    const editModal = document.getElementById('editModal');
+    const modalClose = document.querySelector('.modal-close');
+    const cancelEditButton = document.getElementById('cancelEditButton');
+    let editingItemId = null;
+
+    modalClose.addEventListener('click', () => {
+      editModal.classList.remove('show');
+    });
+
+    cancelEditButton.addEventListener('click', () => {
+      editModal.classList.remove('show');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === editModal) {
+        editModal.classList.remove('show');
+      }
+    });
+
+    // Elements
     const addItemForm = document.getElementById('addItemForm');
+    const itemNameInput = document.getElementById('itemName');
+    const itemIsleInput = document.getElementById('itemIsle');
+    const itemPositionSelect = document.getElementById('itemPosition');
+    const itemSideSelect = document.getElementById('itemSide');
     const itemsContainer = document.getElementById('itemsContainer');
+    const templatesContainer = document.getElementById('templatesContainer');
+    const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+
+    // Fetch all templates for autocomplete
+    let allTemplates = [];
+    db.collection('itemTemplates').onSnapshot((snapshot) => {
+      allTemplates = [];
+      snapshot.forEach((doc) => {
+        allTemplates.push({ id: doc.id, ...doc.data() });
+      });
+      renderTemplates();
+    });
+
+    // Autocomplete functionality
+    itemNameInput.addEventListener('input', (e) => {
+      const value = e.target.value.toLowerCase().trim();
+      autocompleteSuggestions.innerHTML = '';
+
+      if (value.length === 0) {
+        return;
+      }
+
+      const matches = allTemplates.filter(template =>
+        template.name.toLowerCase().includes(value)
+      );
+
+      if (matches.length === 0) {
+        return;
+      }
+
+      matches.slice(0, 5).forEach(template => {
+        const suggestionDiv = document.createElement('div');
+        suggestionDiv.classList.add('autocomplete-item');
+        suggestionDiv.textContent = template.name;
+        suggestionDiv.addEventListener('click', () => {
+          itemNameInput.value = template.name;
+          itemIsleInput.value = template.isle;
+          itemPositionSelect.value = template.position;
+          itemSideSelect.value = template.side;
+          autocompleteSuggestions.innerHTML = '';
+          itemNameInput.focus();
+        });
+        autocompleteSuggestions.appendChild(suggestionDiv);
+      });
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target !== itemNameInput) {
+        autocompleteSuggestions.innerHTML = '';
+      }
+    });
 
     // Function to add a new item
     addItemForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const itemName = document.getElementById('itemName').value;
-      const itemIsle = parseInt(document.getElementById('itemIsle').value); // Parse as integer for sorting
-      const itemPosition = document.getElementById('itemPosition').value;
-      const itemSide = document.getElementById('itemSide').value;
+      const itemName = itemNameInput.value.trim();
+      const itemIsle = parseInt(itemIsleInput.value);
+      const itemPosition = itemPositionSelect.value;
+      const itemSide = itemSideSelect.value;
 
       if (!itemName || isNaN(itemIsle) || !itemPosition || !itemSide) {
         alert('Please fill in all fields correctly.');
@@ -173,18 +464,29 @@
       }
 
       try {
+        // Add to shopping list
         await db.collection('shoppingList').add({
           name: itemName,
           isle: itemIsle,
           position: itemPosition,
           side: itemSide,
-          purchased: false, // New field to track if purchased
-          timestamp: firebase.firestore.FieldValue.serverTimestamp() // To keep track of creation order if needed
+          purchased: false,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Clear form fields
+        // Check if template exists, if not create it
+        const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
+        if (!existingTemplate) {
+          await db.collection('itemTemplates').add({
+            name: itemName,
+            isle: itemIsle,
+            position: itemPosition,
+            side: itemSide
+          });
+        }
+
         addItemForm.reset();
-        document.getElementById('itemName').focus(); // Keep focus on item name for quick entry
+        itemNameInput.focus();
       } catch (error) {
         console.error("Error adding document: ", error);
         alert("Failed to add item. Please try again.");
@@ -193,14 +495,13 @@
 
     // Function to render the shopping list
     const renderShoppingList = (items) => {
-      itemsContainer.innerHTML = ''; // Clear current list
+      itemsContainer.innerHTML = '';
 
       if (items.length === 0) {
         itemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some above!</p>';
         return;
       }
 
-      // Sort items: first by isle (numeric), then by a custom order for position, then by side
       const positionOrder = {
         "Start of Isle": 1,
         "Middle of Isle": 2,
@@ -208,23 +509,19 @@
       };
 
       items.sort((a, b) => {
-        // Sort by purchased status (false first, then true)
         if (a.purchased !== b.purchased) {
             return a.purchased - b.purchased;
         }
-        // Then by isle
         if (a.isle !== b.isle) {
           return a.isle - b.isle;
         }
-        // Then by position
         if (positionOrder[a.position] !== positionOrder[b.position]) {
           return positionOrder[a.position] - positionOrder[b.position];
         }
-        // Then by side
         if (a.side !== b.side) {
             return a.side.localeCompare(b.side);
         }
-        return 0; // Maintain original order if all above are equal
+        return 0;
       });
 
       items.forEach(item => {
@@ -239,18 +536,47 @@
             Isle ${item.isle}, ${item.position}, ${item.side}
           </div>
           <div class="actions">
-            <button class="purchased-button" data-id="${item.id}" data-purchased="${item.purchased}">
+            <button class="purchased-button" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
                 ${item.purchased ? 'Unmark' : 'Purchased'}
             </button>
-            <button class="delete-button" data-id="${item.id}">Delete</button>
+            <button class="edit-button" data-id="${item.id}" data-name="${item.name}" type="button">Edit</button>
+            <button class="delete-button" data-id="${item.id}" type="button">Delete</button>
           </div>
         `;
         itemsContainer.appendChild(itemCard);
       });
     };
 
-    // Real-time listener for shopping list changes
-    db.collection('shoppingList').orderBy('timestamp', 'asc') // Order by timestamp to maintain initial order when fetched
+    // Function to render templates
+    const renderTemplates = () => {
+      templatesContainer.innerHTML = '';
+
+      if (allTemplates.length === 0) {
+        templatesContainer.innerHTML = '<p class="no-items">No item templates yet. Add items to your shopping list to create templates!</p>';
+        return;
+      }
+
+      allTemplates.sort((a, b) => a.name.localeCompare(b.name));
+
+      allTemplates.forEach(template => {
+        const templateCard = document.createElement('div');
+        templateCard.classList.add('template-card');
+        templateCard.innerHTML = `
+          <div class="info">
+            <strong>${template.name}</strong> <br>
+            Isle ${template.isle}, ${template.position}, ${template.side}
+          </div>
+          <div>
+            <button class="edit-button" data-id="${template.id}" data-name="${template.name}" type="button">Edit</button>
+            <button class="delete-button" data-id="${template.id}" type="button">Delete</button>
+          </div>
+        `;
+        templatesContainer.appendChild(templateCard);
+      });
+    };
+
+    // Real-time listener for shopping list
+    db.collection('shoppingList').orderBy('timestamp', 'asc')
       .onSnapshot((snapshot) => {
         const items = [];
         snapshot.forEach((doc) => {
@@ -261,7 +587,7 @@
         console.error("Error fetching shopping list: ", error);
       });
 
-    // Event delegation for delete and purchased buttons
+    // Event delegation for shopping list actions
     itemsContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-button')) {
             const itemId = e.target.dataset.id;
@@ -275,18 +601,104 @@
             }
         } else if (e.target.classList.contains('purchased-button')) {
             const itemId = e.target.dataset.id;
-            const currentPurchasedStatus = e.target.dataset.purchased === 'true'; // Convert string to boolean
+            const currentPurchasedStatus = e.target.dataset.purchased === 'true';
             try {
                 await db.collection('shoppingList').doc(itemId).update({
-                    purchased: !currentPurchasedStatus // Toggle the status
+                    purchased: !currentPurchasedStatus
                 });
             } catch (error) {
                 console.error("Error updating document: ", error);
                 alert("Failed to update item status. Please try again.");
             }
+        } else if (e.target.classList.contains('edit-button') && e.target.closest('#itemsContainer')) {
+            const itemId = e.target.dataset.id;
+            const itemName = e.target.dataset.name;
+            editingItemId = itemId;
+            
+            // Fetch the current item data
+            try {
+              const doc = await db.collection('shoppingList').doc(itemId).get();
+              if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('editItemName').value = data.name;
+                document.getElementById('editItemIsle').value = data.isle;
+                document.getElementById('editItemPosition').value = data.position;
+                document.getElementById('editItemSide').value = data.side;
+                editModal.classList.add('show');
+              }
+            } catch (error) {
+              console.error("Error fetching item: ", error);
+            }
         }
     });
 
+    // Event delegation for template actions
+    templatesContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-button') && e.target.closest('#templatesContainer')) {
+            const templateId = e.target.dataset.id;
+            if (confirm('Are you sure you want to delete this template?')) {
+                try {
+                    await db.collection('itemTemplates').doc(templateId).delete();
+                } catch (error) {
+                    console.error("Error removing template: ", error);
+                    alert("Failed to delete template. Please try again.");
+                }
+            }
+        } else if (e.target.classList.contains('edit-button') && e.target.closest('#templatesContainer')) {
+            const templateId = e.target.dataset.id;
+            const template = allTemplates.find(t => t.id === templateId);
+            
+            if (template) {
+              editingItemId = templateId;
+              document.getElementById('editItemName').value = template.name;
+              document.getElementById('editItemIsle').value = template.isle;
+              document.getElementById('editItemPosition').value = template.position;
+              document.getElementById('editItemSide').value = template.side;
+              editModal.classList.add('show');
+            }
+        }
+    });
+
+    // Edit form submission
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editIsle = parseInt(document.getElementById('editItemIsle').value);
+      const editPosition = document.getElementById('editItemPosition').value;
+      const editSide = document.getElementById('editItemSide').value;
+
+      if (isNaN(editIsle) || !editPosition || !editSide) {
+        alert('Please fill in all fields correctly.');
+        return;
+      }
+
+      try {
+        // Determine if editing a template or shopping list item
+        const itemTemplate = allTemplates.find(t => t.id === editingItemId);
+        
+        if (itemTemplate) {
+          // Editing a template
+          await db.collection('itemTemplates').doc(editingItemId).update({
+            isle: editIsle,
+            position: editPosition,
+            side: editSide
+          });
+        } else {
+          // Editing a shopping list item
+          await db.collection('shoppingList').doc(editingItemId).update({
+            isle: editIsle,
+            position: editPosition,
+            side: editSide
+          });
+        }
+
+        editModal.classList.remove('show');
+        editingItemId = null;
+      } catch (error) {
+        console.error("Error updating document: ", error);
+        alert("Failed to update item. Please try again.");
+      }
+    });
   </script>
 </body>
 </html>
