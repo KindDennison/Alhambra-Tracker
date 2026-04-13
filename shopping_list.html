@@ -157,7 +157,6 @@
       margin-bottom: 15px;
       padding: 10px;
       background: white;
-      border-radius: 4px;
       border-left: 4px solid #0055a5;
     }
     .route-number {
@@ -486,7 +485,7 @@
       projectId: "teamdennisontracker",
       storageBucket: "teamdennisontracker.firebasestorage.app",
       messagingSenderId: "915336870349",
-      appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+      appId: "1:915336870349:web:c070e9b3fc0b689fe62c84"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -887,9 +886,16 @@
           
           // Determine X position based on side
           let itemX;
-          if (item.side === 'Left') {
+          
+          // For DOWN aisles, flip Left/Right to match user's perspective
+          let sideToUse = item.side;
+          if (direction === 'DOWN' && item.side !== 'Both') {
+            sideToUse = item.side === 'Left' ? 'Right' : 'Left';
+          }
+          
+          if (sideToUse === 'Left') {
               itemX = xCenter - halfAisleWidth - 8;
-          } else if (item.side === 'Right') {
+          } else if (sideToUse === 'Right') {
               itemX = xCenter + halfAisleWidth + 8;
           } else { 
               itemX = xCenter;
