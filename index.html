@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Team Dennison Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Dennison Apps</title>
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
   <style>
@@ -12,46 +13,148 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
     }
-    .login-box {
+    .main-container {
       background: white;
       padding: 2rem;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       text-align: center;
+      max-width: 600px;
+      width: 100%;
     }
-    input {
+    h1 {
+      color: #0055a5;
+      margin-bottom: 1.5rem;
+    }
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      transition: opacity 0.3s ease;
+    }
+    .app-icon {
+      background: #e9ecef;
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: background 0.3s ease, transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 120px;
+      cursor: pointer; /* To indicate it's clickable */
+    }
+    .app-icon:hover {
+      background: #d4e0e8;
+      transform: translateY(-5px);
+    }
+    .app-icon img {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 10px;
+    }
+    /* Specific styles for the Alhambra Tracker icon */
+    .app-icon.tracker {
+      background: #0055a5;
+      color: white;
+    }
+    .app-icon.tracker:hover {
+      background: #003f7f;
+    }
+
+    /* Login Box Styles (initially hidden) */
+    .login-box {
+      display: none; /* Hidden by default */
+      padding: 1rem;
+      text-align: center;
+    }
+    .login-box h2 {
+      color: #0055a5;
+      margin-bottom: 1.5rem;
+    }
+    .login-box input {
       display: block;
       margin: 1rem auto;
-      padding: 0.5rem;
-      width: 80%;
+      padding: 0.75rem;
+      width: calc(100% - 20px);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      max-width: 300px; /* Limit width for cleaner look */
     }
-    button {
-      padding: 0.5rem 1rem;
+    .login-box button {
+      padding: 0.75rem 1rem;
       background: #0055a5;
       color: white;
       border: none;
       cursor: pointer;
       border-radius: 4px;
-      margin: 0.5rem;
-      width: 80%;
+      margin: 0.5rem auto;
+      width: calc(100% - 20px);
+      display: block;
+      transition: background 0.3s ease;
+      max-width: 300px; /* Limit width for cleaner look */
     }
-    button:hover {
+    .login-box button:hover {
       background: #003f7f;
+    }
+    .login-box .back-button {
+      background: #6c757d;
+      margin-top: 1rem;
+    }
+    .login-box .back-button:hover {
+      background: #5a6268;
+    }
+    .login-box p#error {
+      color: red;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Alhambra Tracker</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login to Tracker</button>
-    <button onclick="goToFuel()">Record Fuel</button>
-    <!-- NEW BUTTON ADDED HERE -->
-    <button onclick="goToShoppingList()">Shopping List</button>
-    <p id="error" style="color:red;"></p>
+  <div class="main-container">
+    <div id="appLauncher">
+      <h1>Welcome, Jacob Dennison!</h1>
+      <p>Select an application to get started:</p>
+
+      <div class="app-grid">
+        <div class="app-icon tracker" onclick="showLogin()">
+          <img src="https://img.icons8.com/ios-filled/50/ffffff/car.png" alt="Alhambra Tracker Icon"/>
+          Alhambra Tracker
+        </div>
+        <a href="fuel.html" class="app-icon">
+          <img src="https://img.icons8.com/ios-filled/50/petrol.png" alt="Fuel Icon"/>
+          Fuel Costs
+        </a>
+        <a href="shopping_list.html" class="app-icon">
+          <img src="https://img.icons8.com/ios-filled/50/shopping-cart.png" alt="Shopping List Icon"/>
+          Shopping List
+        </a>
+        <a href="freezer.html" class="app-icon">
+          <img src="https://img.icons8.com/ios-filled/50/fridge.png" alt="Freezer Icon"/>
+          Freezer Inventory
+        </a>
+      </div>
+    </div>
+
+    <div id="loginSection" class="login-box">
+      <h2>Alhambra Tracker Login</h2>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button onclick="login()">Login to Tracker</button>
+      <button class="back-button" onclick="hideLogin()">Back to Apps</button>
+      <p id="error"></p>
+    </div>
   </div>
 
   <script>
@@ -66,21 +169,25 @@
 
     firebase.initializeApp(firebaseConfig);
 
+    function showLogin() {
+      document.getElementById('appLauncher').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'block';
+    }
+
+    function hideLogin() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('appLauncher').style.display = 'block';
+      document.getElementById('error').textContent = ''; // Clear any previous errors
+      document.getElementById('email').value = ''; // Clear email field
+      document.getElementById('password').value = ''; // Clear password field
+    }
+
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => window.location.href = "tracker.html")
         .catch(err => document.getElementById("error").textContent = err.message);
-    }
-
-    function goToFuel() {
-      window.location.href = "fuel.html";
-    }
-
-    // NEW FUNCTION ADDED HERE
-    function goToShoppingList() {
-      window.location.href = "shopping_list.html";
     }
   </script>
 </body>
