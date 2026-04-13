@@ -789,8 +789,8 @@
         const aisleInfo = aisles[i];
         
         // Vertical aisle lines
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#999'; // A darker grey
+        ctx.lineWidth = 4;        // Thicker lines
         ctx.beginPath();
         ctx.moveTo(xCenter - halfAisleWidth, padding);
         ctx.lineTo(xCenter - halfAisleWidth, padding + height);
