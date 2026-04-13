@@ -129,15 +129,16 @@
       background: #f9f9f9;
       border-radius: 8px;
       border: 2px solid #e9ecef;
+      text-align: center; /* Center the canvas */
     }
     .floor-plan-canvas {
       width: 100%;
-      max-width: 100%;
+      max-width: 800px; /* Limit max width for better readability */
       border: 2px solid #0055a5;
       border-radius: 4px;
       background: white;
       display: block;
-      margin: 0 auto;
+      margin: 0 auto; /* Center the canvas horizontally */
     }
     .route-guide {
       margin-top: 20px;
@@ -740,14 +741,14 @@
         console.error("Error fetching shopping list: ", error);
       });
 
-    // Floor Plan Drawing Function
+    // Floor Plan Drawing Function (UPDATED)
     function drawFloorPlan() {
       const canvas = floorPlanCanvas;
       const ctx = canvas.getContext('2d');
       
       // Adjust canvas size for responsiveness
       canvas.width = canvas.offsetWidth;
-      canvas.height = Math.max(400, canvas.offsetWidth * 0.75); // Min height 400px, aspect ratio 4:3
+      canvas.height = Math.max(400, canvas.offsetWidth * 0.6);
 
       const padding = 40;
       const width = canvas.width - 2 * padding;
@@ -765,37 +766,29 @@
       ctx.lineWidth = 3;
       ctx.strokeRect(padding, padding, width, height);
 
-      // Aisle drawing logic based on your diagram
-      // Aisles 1, 2, 3, 4, 5 from right to left
+      // Aisle positions from right to left (as per your layout)
+      // Isle 1 (rightmost), Isle 2, Isle 3, Isle 4, Isle 5 (leftmost)
       const numAisles = 5;
-      const aisleWidthRatio = 0.15; // Approx width of an aisle block
-      const aisleSpacingRatio = 0.05; // Space between aisles
-
-      const totalAisleSpace = numAisles * aisleWidthRatio + (numAisles - 1) * aisleSpacingRatio;
-      // Recalculate aisle positions to fit within bounds
-      const effectiveWidth = width * (numAisles * aisleWidthRatio + (numAisles - 1) * aisleSpacingRatio);
-
-      // Calculate starting X for first aisle (rightmost)
-      const startX = padding + width - (width * aisleWidthRatio) * 1 - width * aisleSpacingRatio * 0;
-      
       const aisleXPositions = [];
+      
+      // Distribute aisles evenly across the width
+      const aisleSpacing = width / (numAisles + 1);
+      
       for (let i = 0; i < numAisles; i++) {
-        // Position aisles from right to left
-        aisleXPositions.push(padding + width - ((i + 1) * width * aisleWidthRatio + i * width * aisleSpacingRatio) + (width * aisleWidthRatio / 2));
+        aisleXPositions.push(padding + (i + 1) * aisleSpacing);
       }
-      aisleXPositions.reverse(); // Now from left to right
-
-      // Your path order: Isle 1 (UP), Isle 2 (DOWN), Isle 3 (UP), Isle 4 (DOWN), Isle 5 (UP)
-      const aisleRenderOrder = [0, 1, 2, 3, 4]; // Corresponds to Isle 1, 2, 3, 4, 5
-      const aisleDirections = ['UP', 'DOWN', 'UP', 'DOWN', 'UP'];
+      
+      // Reverse so Isle 1 is on the right
+      aisleXPositions.reverse();
+      
       const aisleLabels = ['1', '2', '3', '4', '5'];
+      const aisleDirections = ['UP', 'DOWN', 'UP', 'DOWN', 'UP'];
 
-
-      // Draw aisle lines
-      aisleRenderOrder.forEach((originalIndex, i) => {
-        const xCenter = aisleXPositions[originalIndex];
-        const halfAisleWidth = width * aisleWidthRatio / 2 * 0.8; // Make them slightly thinner
+      // Draw aisle lines and labels
+      aisleXPositions.forEach((xCenter, i) => {
+        const halfAisleWidth = width * 0.08; // Aisle thickness
         
+        // Vertical aisle lines
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -805,51 +798,71 @@
         ctx.lineTo(xCenter + halfAisleWidth, padding + height);
         ctx.stroke();
 
-        // Draw aisle number
+        // Draw aisle number circle at top
         ctx.fillStyle = '#0055a5';
-        ctx.font = 'bold 16px Arial';
+        ctx.beginPath();
+        ctx.arc(xCenter, padding - 15, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(aisleLabels[originalIndex], xCenter, padding + height + 20);
+        ctx.fillText(aisleLabels[i], xCenter, padding - 15);
 
-        // Draw aisle direction arrows
+        // Draw direction arrow in center of aisle
         ctx.strokeStyle = '#0055a5';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        if (aisleDirections[originalIndex] === 'UP') {
+        
+        if (aisleDirections[i] === 'UP') {
           // Arrow pointing up
-          ctx.moveTo(xCenter, padding + height * 0.9);
-          ctx.lineTo(xCenter, padding + height * 0.1);
-          ctx.lineTo(xCenter - 7, padding + height * 0.1 + 7);
-          ctx.moveTo(xCenter, padding + height * 0.1);
-          ctx.lineTo(xCenter + 7, padding + height * 0.1 + 7);
+          const arrowBaseY = padding + height * 0.7;
+          const arrowTopY = padding + height * 0.3;
+          ctx.moveTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter - 6, arrowTopY + 8);
+          ctx.moveTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter + 6, arrowTopY + 8);
         } else {
           // Arrow pointing down
-          ctx.moveTo(xCenter, padding + height * 0.1);
-          ctx.lineTo(xCenter, padding + height * 0.9);
-          ctx.lineTo(xCenter - 7, padding + height * 0.9 - 7);
-          ctx.moveTo(xCenter, padding + height * 0.9);
-          ctx.lineTo(xCenter + 7, padding + height * 0.9 - 7);
+          const arrowTopY = padding + height * 0.3;
+          const arrowBaseY = padding + height * 0.7;
+          ctx.moveTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter - 6, arrowBaseY - 8);
+          ctx.moveTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter + 6, arrowBaseY - 8);
         }
         ctx.stroke();
       });
 
-      // Entry point
-      const entryX = padding + width - (width * 0.15 / 2); // Center of Isle 1, far right side of canvas
-      const entryY = padding + height + 10; // Below the bottom edge
+      // Entry point (bottom right, at Isle 1)
+      const entryX = aisleXPositions[0]; // Isle 1 position (rightmost)
+      const entryY = padding + height + 20;
       ctx.fillStyle = '#ff6b6b';
       ctx.beginPath();
-      ctx.arc(entryX, entryY, 8, 0, Math.PI * 2);
+      ctx.arc(entryX, entryY, 10, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#000';
-      ctx.font = '12px Arial';
+      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('ENTRY', entryX, entryY + 10);
+      ctx.fillText('ENTRY', entryX, entryY + 12);
       
-      // Get unpurchased items, sorted for routing
+      // Get unpurchased items
       const unpurchasedItems = allShoppingItems.filter(item => !item.purchased);
 
+      if (unpurchasedItems.length === 0) {
+        ctx.fillStyle = '#999';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('No items to shop for', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      // Sort items for routing
       const positionOrder = { "Start": 1, "Middle": 2, "End": 3 };
       unpurchasedItems.sort((a, b) => {
           if (a.isle !== b.isle) return a.isle - b.isle;
@@ -857,77 +870,84 @@
           return a.side.localeCompare(b.side);
       });
 
-      if (unpurchasedItems.length === 0) return;
-
-      // Plot items and draw route
-      ctx.strokeStyle = '#28a745';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([5, 5]); // Dashed line for path
-
-      let currentX = entryX;
-      let currentY = entryY; // Start at the entry point
-
-      ctx.beginPath();
-      ctx.moveTo(currentX, currentY); // Start path from entry
-
+      // Plot items on the map
+      const itemPositions = [];
+      
       unpurchasedItems.forEach((item, index) => {
-        const aisleVisualIndex = item.isle - 1; // Isle 1 maps to index 0, etc.
-        if (aisleVisualIndex >= 0 && aisleVisualIndex < aisleXPositions.length) {
-          const xCenter = aisleXPositions[aisleVisualIndex];
-          const direction = aisleDirections[aisleVisualIndex];
-          const halfAisleWidth = width * aisleWidthRatio / 2 * 0.8;
+        const aisleIndex = item.isle - 1; // Isle 1 = index 0, etc.
+        
+        if (aisleIndex >= 0 && aisleIndex < aisleXPositions.length) {
+          const xCenter = aisleXPositions[aisleIndex];
+          const direction = aisleDirections[aisleIndex];
+          const halfAisleWidth = width * 0.08;
           
+          // Determine X position based on side
           let itemX;
           if (item.side === 'Left') {
-              itemX = xCenter - halfAisleWidth + 5; // Slightly inside left aisle wall
+              itemX = xCenter - halfAisleWidth - 8;
           } else if (item.side === 'Right') {
-              itemX = xCenter + halfAisleWidth - 5; // Slightly inside right aisle wall
-          } else { // Both - place in center of aisle
+              itemX = xCenter + halfAisleWidth + 8;
+          } else { 
               itemX = xCenter;
           }
 
+          // Determine Y position based on position in aisle
           let itemY;
           if (item.position === 'Start') {
-            itemY = (direction === 'UP') ? padding + height - 30 : padding + 30;
+            // For UP direction: Start is at bottom, for DOWN: Start is at top
+            itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
           } else if (item.position === 'Middle') {
             itemY = padding + height / 2;
           } else { // End
-            itemY = (direction === 'UP') ? padding + 30 : padding + height - 30;
+            itemY = (direction === 'UP') ? (padding + 20) : (padding + height - 20);
           }
           
-          // Draw path segments to current item
-          // For simplicity, connect directly for now. More complex routing could be added.
-          ctx.lineTo(itemX, itemY); 
-
-          // Draw item circle
-          ctx.fillStyle = '#0055a5';
-          ctx.beginPath();
-          ctx.arc(itemX, itemY, 12, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 12px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(index + 1, itemX, itemY);
-
-          currentX = itemX;
-          currentY = itemY;
+          itemPositions.push({ x: itemX, y: itemY, index: index });
         }
       });
-      ctx.stroke();
-      ctx.setLineDash([]); // Reset line dash
+
+      // Draw path connecting items
+      if (itemPositions.length > 0) {
+        ctx.strokeStyle = '#28a745';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(entryX, entryY);
+        
+        itemPositions.forEach(pos => {
+          ctx.lineTo(pos.x, pos.y);
+        });
+        
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Draw item circles
+      itemPositions.forEach(pos => {
+        ctx.fillStyle = '#0055a5';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pos.index + 1, pos.x, pos.y);
+      });
 
       // Make canvas responsive
-      window.addEventListener('resize', () => {
-        if (document.getElementById('route-tab').classList.contains('active')) {
-          drawFloorPlan();
-        }
-      });
+      if (!window.floorPlanResizeListener) {
+        window.floorPlanResizeListener = true;
+        window.addEventListener('resize', () => {
+          if (document.getElementById('route-tab').classList.contains('active')) {
+            setTimeout(() => drawFloorPlan(), 100);
+          }
+        });
+      }
     }
 
-
-    // Route Guide Function
+    // Route Guide Function (remains the same as sorting is handled there)
     function renderRouteGuide(items) {
       const routeGuideItems = document.getElementById('routeGuideItems');
       routeGuideItems.innerHTML = '';
