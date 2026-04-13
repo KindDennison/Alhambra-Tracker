@@ -49,6 +49,8 @@
     <input type="password" id="password" placeholder="Password" />
     <button onclick="login()">Login to Tracker</button>
     <button onclick="goToFuel()">Record Fuel</button>
+    <!-- NEW BUTTON ADDED HERE -->
+    <button onclick="goToShoppingList()">Shopping List</button>
     <p id="error" style="color:red;"></p>
   </div>
 
@@ -74,6 +76,11 @@
 
     function goToFuel() {
       window.location.href = "fuel.html";
+    }
+
+    // NEW FUNCTION ADDED HERE
+    function goToShoppingList() {
+      window.location.href = "shopping_list.html";
     }
   </script>
 </body>
