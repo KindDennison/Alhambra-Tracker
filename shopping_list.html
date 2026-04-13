@@ -14,17 +14,34 @@
       padding: 1rem;
     }
     .container {
-      max-width: 800px;
+      max-width: 1200px;
       margin: 20px auto;
       background: white;
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h1 {
-      text-align: center;
-      color: #0055a5;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
+    }
+    h1 {
+      color: #0055a5;
+      margin: 0;
+    }
+    .back-button {
+      padding: 10px 20px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .back-button:hover {
+      background: #5a6268;
     }
     .tabs {
       display: flex;
@@ -80,6 +97,91 @@
     }
     form button:hover {
       background: #003f7f;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .action-buttons button {
+      flex: 1;
+      padding: 10px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .action-buttons button:hover {
+      background: #218838;
+    }
+    .action-buttons button.danger {
+      background: #dc3545;
+    }
+    .action-buttons button.danger:hover {
+      background: #c82333;
+    }
+    /* Floor Plan Styles */
+    .floor-plan-container {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 2px solid #e9ecef;
+    }
+    .floor-plan-canvas {
+      width: 100%;
+      max-width: 100%;
+      border: 2px solid #0055a5;
+      border-radius: 4px;
+      background: white;
+      display: block;
+      margin: 0 auto;
+    }
+    .route-guide {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f0f8ff;
+      border-left: 4px solid #0055a5;
+      border-radius: 4px;
+    }
+    .route-guide h3 {
+      color: #0055a5;
+      margin-top: 0;
+    }
+    .route-item {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      border-left: 4px solid #0055a5;
+    }
+    .route-number {
+      background: #0055a5;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .route-details {
+      flex: 1;
+    }
+    .route-details strong {
+      color: #0055a5;
+      font-size: 1.1rem;
+    }
+    .route-details small {
+      display: block;
+      color: #666;
+      margin-top: 5px;
     }
     #shoppingListDisplay {
       margin-top: 30px;
@@ -244,14 +346,31 @@
       position: relative;
       margin-bottom: 15px;
     }
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+      }
+      .item-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .item-card .actions {
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Shopping List</h1>
+    <div class="header">
+      <h1>Shopping List</h1>
+      <button class="back-button" onclick="goBack()">Back to Home</button>
+    </div>
 
     <div class="tabs">
       <button class="tab-button active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button" data-tab="route">Shop Route</button>
       <button class="tab-button" data-tab="templates">Item Templates</button>
     </div>
 
@@ -270,9 +389,9 @@
         <label for="itemPosition">Position:</label>
         <select id="itemPosition" required>
           <option value="">Select Position</option>
-          <option value="Start of Isle">Start of Isle</option>
-          <option value="Middle of Isle">Middle of Isle</option>
-          <option value="End of Isle">End of Isle</option>
+          <option value="Start">Start</option>
+          <option value="Middle">Middle</option>
+          <option value="End">End</option>
         </select>
 
         <label for="itemSide">Side:</label>
@@ -286,10 +405,29 @@
         <button type="submit">Add Item</button>
       </form>
 
+      <div class="action-buttons">
+        <button onclick="clearAllPurchased()">Clear Purchased Items</button>
+        <button onclick="markAllPurchased()">Mark All as Purchased</button>
+      </div>
+
       <div id="shoppingListDisplay">
         <h2>Your List</h2>
         <div id="itemsContainer">
           <p class="no-items">No items in your list yet. Add some above!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shop Route Tab -->
+    <div class="tab-content" id="route-tab">
+      <h2>Your Shopping Route</h2>
+      <div class="floor-plan-container">
+        <canvas id="floorPlanCanvas" class="floor-plan-canvas"></canvas>
+      </div>
+      <div class="route-guide" id="routeGuideContainer">
+        <h3>Shopping Sequence</h3>
+        <div id="routeGuideItems">
+          <p class="no-items">Add items to your list to see your route</p>
         </div>
       </div>
     </div>
@@ -319,9 +457,9 @@
         <label for="editItemPosition">Position:</label>
         <select id="editItemPosition" required>
           <option value="">Select Position</option>
-          <option value="Start of Isle">Start of Isle</option>
-          <option value="Middle of Isle">Middle of Isle</option>
-          <option value="End of Isle">End of Isle</option>
+          <option value="Start">Start</option>
+          <option value="Middle">Middle</option>
+          <option value="End">End</option>
         </select>
 
         <label for="editItemSide">Side:</label>
@@ -353,6 +491,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Back button function
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -366,6 +509,11 @@
         
         button.classList.add('active');
         document.getElementById(`${tabName}-tab`).classList.add('active');
+        
+        if (tabName === 'route') {
+          // Give canvas a moment to render before drawing
+          setTimeout(() => drawFloorPlan(), 100); 
+        }
       });
     });
 
@@ -398,9 +546,12 @@
     const itemsContainer = document.getElementById('itemsContainer');
     const templatesContainer = document.getElementById('templatesContainer');
     const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+    const floorPlanCanvas = document.getElementById('floorPlanCanvas');
+
+    let allShoppingItems = [];
+    let allTemplates = [];
 
     // Fetch all templates for autocomplete
-    let allTemplates = [];
     db.collection('itemTemplates').onSnapshot((snapshot) => {
       allTemplates = [];
       snapshot.forEach((doc) => {
@@ -464,7 +615,6 @@
       }
 
       try {
-        // Add to shopping list
         await db.collection('shoppingList').add({
           name: itemName,
           isle: itemIsle,
@@ -474,7 +624,6 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Check if template exists, if not create it
         const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
         if (!existingTemplate) {
           await db.collection('itemTemplates').add({
@@ -503,9 +652,9 @@
       }
 
       const positionOrder = {
-        "Start of Isle": 1,
-        "Middle of Isle": 2,
-        "End of Isle": 3
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
       };
 
       items.sort((a, b) => {
@@ -578,14 +727,304 @@
     // Real-time listener for shopping list
     db.collection('shoppingList').orderBy('timestamp', 'asc')
       .onSnapshot((snapshot) => {
-        const items = [];
+        allShoppingItems = [];
         snapshot.forEach((doc) => {
-          items.push({ id: doc.id, ...doc.data() });
+          allShoppingItems.push({ id: doc.id, ...doc.data() });
         });
-        renderShoppingList(items);
+        renderShoppingList(allShoppingItems);
+        renderRouteGuide(allShoppingItems); // Update route guide when list changes
+        if (document.getElementById('route-tab').classList.contains('active')) {
+            drawFloorPlan(); // Redraw map if tab is active
+        }
       }, (error) => {
         console.error("Error fetching shopping list: ", error);
       });
+
+    // Floor Plan Drawing Function
+    function drawFloorPlan() {
+      const canvas = floorPlanCanvas;
+      const ctx = canvas.getContext('2d');
+      
+      // Adjust canvas size for responsiveness
+      canvas.width = canvas.offsetWidth;
+      canvas.height = Math.max(400, canvas.offsetWidth * 0.75); // Min height 400px, aspect ratio 4:3
+
+      const padding = 40;
+      const width = canvas.width - 2 * padding;
+      const height = canvas.height - 2 * padding;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Store outline
+      ctx.strokeStyle = '#0055a5';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(padding, padding, width, height);
+
+      // Aisle drawing logic based on your diagram
+      // Aisles 1, 2, 3, 4, 5 from right to left
+      const numAisles = 5;
+      const aisleWidthRatio = 0.15; // Approx width of an aisle block
+      const aisleSpacingRatio = 0.05; // Space between aisles
+
+      const totalAisleSpace = numAisles * aisleWidthRatio + (numAisles - 1) * aisleSpacingRatio;
+      // Recalculate aisle positions to fit within bounds
+      const effectiveWidth = width * (numAisles * aisleWidthRatio + (numAisles - 1) * aisleSpacingRatio);
+
+      // Calculate starting X for first aisle (rightmost)
+      const startX = padding + width - (width * aisleWidthRatio) * 1 - width * aisleSpacingRatio * 0;
+      
+      const aisleXPositions = [];
+      for (let i = 0; i < numAisles; i++) {
+        // Position aisles from right to left
+        aisleXPositions.push(padding + width - ((i + 1) * width * aisleWidthRatio + i * width * aisleSpacingRatio) + (width * aisleWidthRatio / 2));
+      }
+      aisleXPositions.reverse(); // Now from left to right
+
+      // Your path order: Isle 1 (UP), Isle 2 (DOWN), Isle 3 (UP), Isle 4 (DOWN), Isle 5 (UP)
+      const aisleRenderOrder = [0, 1, 2, 3, 4]; // Corresponds to Isle 1, 2, 3, 4, 5
+      const aisleDirections = ['UP', 'DOWN', 'UP', 'DOWN', 'UP'];
+      const aisleLabels = ['1', '2', '3', '4', '5'];
+
+
+      // Draw aisle lines
+      aisleRenderOrder.forEach((originalIndex, i) => {
+        const xCenter = aisleXPositions[originalIndex];
+        const halfAisleWidth = width * aisleWidthRatio / 2 * 0.8; // Make them slightly thinner
+        
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xCenter - halfAisleWidth, padding);
+        ctx.lineTo(xCenter - halfAisleWidth, padding + height);
+        ctx.moveTo(xCenter + halfAisleWidth, padding);
+        ctx.lineTo(xCenter + halfAisleWidth, padding + height);
+        ctx.stroke();
+
+        // Draw aisle number
+        ctx.fillStyle = '#0055a5';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(aisleLabels[originalIndex], xCenter, padding + height + 20);
+
+        // Draw aisle direction arrows
+        ctx.strokeStyle = '#0055a5';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (aisleDirections[originalIndex] === 'UP') {
+          // Arrow pointing up
+          ctx.moveTo(xCenter, padding + height * 0.9);
+          ctx.lineTo(xCenter, padding + height * 0.1);
+          ctx.lineTo(xCenter - 7, padding + height * 0.1 + 7);
+          ctx.moveTo(xCenter, padding + height * 0.1);
+          ctx.lineTo(xCenter + 7, padding + height * 0.1 + 7);
+        } else {
+          // Arrow pointing down
+          ctx.moveTo(xCenter, padding + height * 0.1);
+          ctx.lineTo(xCenter, padding + height * 0.9);
+          ctx.lineTo(xCenter - 7, padding + height * 0.9 - 7);
+          ctx.moveTo(xCenter, padding + height * 0.9);
+          ctx.lineTo(xCenter + 7, padding + height * 0.9 - 7);
+        }
+        ctx.stroke();
+      });
+
+      // Entry point
+      const entryX = padding + width - (width * 0.15 / 2); // Center of Isle 1, far right side of canvas
+      const entryY = padding + height + 10; // Below the bottom edge
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(entryX, entryY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('ENTRY', entryX, entryY + 10);
+      
+      // Get unpurchased items, sorted for routing
+      const unpurchasedItems = allShoppingItems.filter(item => !item.purchased);
+
+      const positionOrder = { "Start": 1, "Middle": 2, "End": 3 };
+      unpurchasedItems.sort((a, b) => {
+          if (a.isle !== b.isle) return a.isle - b.isle;
+          if (positionOrder[a.position] !== positionOrder[b.position]) return positionOrder[a.position] - positionOrder[b.position];
+          return a.side.localeCompare(b.side);
+      });
+
+      if (unpurchasedItems.length === 0) return;
+
+      // Plot items and draw route
+      ctx.strokeStyle = '#28a745';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 5]); // Dashed line for path
+
+      let currentX = entryX;
+      let currentY = entryY; // Start at the entry point
+
+      ctx.beginPath();
+      ctx.moveTo(currentX, currentY); // Start path from entry
+
+      unpurchasedItems.forEach((item, index) => {
+        const aisleVisualIndex = item.isle - 1; // Isle 1 maps to index 0, etc.
+        if (aisleVisualIndex >= 0 && aisleVisualIndex < aisleXPositions.length) {
+          const xCenter = aisleXPositions[aisleVisualIndex];
+          const direction = aisleDirections[aisleVisualIndex];
+          const halfAisleWidth = width * aisleWidthRatio / 2 * 0.8;
+          
+          let itemX;
+          if (item.side === 'Left') {
+              itemX = xCenter - halfAisleWidth + 5; // Slightly inside left aisle wall
+          } else if (item.side === 'Right') {
+              itemX = xCenter + halfAisleWidth - 5; // Slightly inside right aisle wall
+          } else { // Both - place in center of aisle
+              itemX = xCenter;
+          }
+
+          let itemY;
+          if (item.position === 'Start') {
+            itemY = (direction === 'UP') ? padding + height - 30 : padding + 30;
+          } else if (item.position === 'Middle') {
+            itemY = padding + height / 2;
+          } else { // End
+            itemY = (direction === 'UP') ? padding + 30 : padding + height - 30;
+          }
+          
+          // Draw path segments to current item
+          // For simplicity, connect directly for now. More complex routing could be added.
+          ctx.lineTo(itemX, itemY); 
+
+          // Draw item circle
+          ctx.fillStyle = '#0055a5';
+          ctx.beginPath();
+          ctx.arc(itemX, itemY, 12, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(index + 1, itemX, itemY);
+
+          currentX = itemX;
+          currentY = itemY;
+        }
+      });
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset line dash
+
+      // Make canvas responsive
+      window.addEventListener('resize', () => {
+        if (document.getElementById('route-tab').classList.contains('active')) {
+          drawFloorPlan();
+        }
+      });
+    }
+
+
+    // Route Guide Function
+    function renderRouteGuide(items) {
+      const routeGuideItems = document.getElementById('routeGuideItems');
+      routeGuideItems.innerHTML = '';
+
+      const unpurchasedItems = items.filter(item => !item.purchased);
+
+      if (unpurchasedItems.length === 0) {
+        routeGuideItems.innerHTML = '<p class="no-items">No items in your list. Add items to see your route!</p>';
+        return;
+      }
+
+      const positionOrder = {
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
+      };
+
+      unpurchasedItems.sort((a, b) => {
+        if (a.isle !== b.isle) {
+          return a.isle - b.isle;
+        }
+        if (positionOrder[a.position] !== positionOrder[b.position]) {
+          return positionOrder[a.position] - positionOrder[b.position];
+        }
+        if (a.side !== b.side) {
+            return a.side.localeCompare(b.side);
+        }
+        return 0;
+      });
+
+      unpurchasedItems.forEach((item, index) => {
+        const routeItem = document.createElement('div');
+        routeItem.classList.add('route-item');
+        routeItem.innerHTML = `
+          <div class="route-number">${index + 1}</div>
+          <div class="route-details">
+            <strong>${item.name}</strong>
+            <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
+          </div>
+        `;
+        routeGuideItems.appendChild(routeItem);
+      });
+    }
+
+    // Clear all purchased items
+    async function clearAllPurchased() {
+      if (!confirm('Are you sure you want to delete all purchased items?')) {
+        return;
+      }
+
+      try {
+        const purchasedItems = allShoppingItems.filter(item => item.purchased);
+        if (purchasedItems.length === 0) {
+            alert('No purchased items to clear!');
+            return;
+        }
+        const batch = db.batch();
+
+        purchasedItems.forEach(item => {
+          batch.delete(db.collection('shoppingList').doc(item.id));
+        });
+
+        await batch.commit();
+        alert('All purchased items cleared!');
+      } catch (error) {
+        console.error("Error clearing purchased items: ", error);
+        alert("Failed to clear purchased items. Please try again.");
+      }
+    }
+
+    // Mark all as purchased
+    async function markAllPurchased() {
+      if (!confirm('Mark all items as purchased?')) {
+        return;
+      }
+
+      try {
+        const unpurchasedItems = allShoppingItems.filter(item => !item.purchased);
+        if (unpurchasedItems.length === 0) {
+            alert('All items are already purchased!');
+            return;
+        }
+        const batch = db.batch();
+
+        unpurchasedItems.forEach(item => {
+          batch.update(db.collection('shoppingList').doc(item.id), {
+            purchased: true
+          });
+        });
+
+        await batch.commit();
+        alert('All items marked as purchased!');
+      } catch (error) {
+        console.error("Error marking items as purchased: ", error);
+        alert("Failed to mark items as purchased. Please try again.");
+      }
+    }
 
     // Event delegation for shopping list actions
     itemsContainer.addEventListener('click', async (e) => {
@@ -612,10 +1051,8 @@
             }
         } else if (e.target.classList.contains('edit-button') && e.target.closest('#itemsContainer')) {
             const itemId = e.target.dataset.id;
-            const itemName = e.target.dataset.name;
             editingItemId = itemId;
             
-            // Fetch the current item data
             try {
               const doc = await db.collection('shoppingList').doc(itemId).get();
               if (doc.exists) {
@@ -673,18 +1110,15 @@
       }
 
       try {
-        // Determine if editing a template or shopping list item
         const itemTemplate = allTemplates.find(t => t.id === editingItemId);
         
         if (itemTemplate) {
-          // Editing a template
           await db.collection('itemTemplates').doc(editingItemId).update({
             isle: editIsle,
             position: editPosition,
             side: editSide
           });
         } else {
-          // Editing a shopping list item
           await db.collection('shoppingList').doc(editingItemId).update({
             isle: editIsle,
             position: editPosition,
