@@ -766,27 +766,28 @@
       ctx.lineWidth = 3;
       ctx.strokeRect(padding, padding, width, height);
 
-      // Aisle positions from right to left (as per your layout)
-      // Isle 1 (rightmost), Isle 2, Isle 3, Isle 4, Isle 5 (leftmost)
-      const numAisles = 5;
+      // Define aisles with their configuration
+      const aisles = [
+        { number: 5, direction: 'UP' },
+        { number: 4, direction: 'DOWN' },
+        { number: 3, direction: 'UP' },
+        { number: 2, direction: 'DOWN' },
+        { number: 1, direction: 'UP' }
+      ];
+
+      // Aisle positions from left to right
+      const numAisles = aisles.length;
       const aisleXPositions = [];
-      
-      // Distribute aisles evenly across the width
       const aisleSpacing = width / (numAisles + 1);
       
       for (let i = 0; i < numAisles; i++) {
         aisleXPositions.push(padding + (i + 1) * aisleSpacing);
       }
-      
-      // Reverse so Isle 1 is on the right
-      aisleXPositions.reverse();
-      
-      const aisleLabels = ['1', '2', '3', '4', '5'];
-      const aisleDirections = ['UP', 'DOWN', 'UP', 'DOWN', 'UP'];
 
       // Draw aisle lines and labels
       aisleXPositions.forEach((xCenter, i) => {
         const halfAisleWidth = width * 0.08; // Aisle thickness
+        const aisleInfo = aisles[i];
         
         // Vertical aisle lines
         ctx.strokeStyle = '#ddd';
@@ -808,14 +809,14 @@
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(aisleLabels[i], xCenter, padding - 15);
+        ctx.fillText(aisleInfo.number, xCenter, padding - 15);
 
         // Draw direction arrow in center of aisle
         ctx.strokeStyle = '#0055a5';
         ctx.lineWidth = 2;
         ctx.beginPath();
         
-        if (aisleDirections[i] === 'UP') {
+        if (aisleInfo.direction === 'UP') {
           // Arrow pointing up
           const arrowBaseY = padding + height * 0.7;
           const arrowTopY = padding + height * 0.3;
@@ -838,7 +839,7 @@
       });
 
       // Entry point (bottom right, at Isle 1)
-      const entryX = aisleXPositions[0]; // Isle 1 position (rightmost)
+      const entryX = aisleXPositions[4]; // Isle 1 position (rightmost)
       const entryY = padding + height + 20;
       ctx.fillStyle = '#ff6b6b';
       ctx.beginPath();
@@ -874,11 +875,14 @@
       const itemPositions = [];
       
       unpurchasedItems.forEach((item, index) => {
-        const aisleIndex = item.isle - 1; // Isle 1 = index 0, etc.
+        // Find the aisle configuration for this item's isle
+        const aisleConfig = aisles.find(aisle => aisle.number === item.isle);
         
-        if (aisleIndex >= 0 && aisleIndex < aisleXPositions.length) {
+        if (aisleConfig) {
+          // Find the index of this aisle in the aisles array to get its X position
+          const aisleIndex = aisles.findIndex(aisle => aisle.number === item.isle);
           const xCenter = aisleXPositions[aisleIndex];
-          const direction = aisleDirections[aisleIndex];
+          const direction = aisleConfig.direction;
           const halfAisleWidth = width * 0.08;
           
           // Determine X position based on side
@@ -891,10 +895,9 @@
               itemX = xCenter;
           }
 
-          // Determine Y position based on position in aisle
+          // Determine Y position based on position in aisle and direction
           let itemY;
           if (item.position === 'Start') {
-            // For UP direction: Start is at bottom, for DOWN: Start is at top
             itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
           } else if (item.position === 'Middle') {
             itemY = padding + height / 2;
@@ -947,7 +950,7 @@
       }
     }
 
-    // Route Guide Function (remains the same as sorting is handled there)
+    // Route Guide Function
     function renderRouteGuide(items) {
       const routeGuideItems = document.getElementById('routeGuideItems');
       routeGuideItems.innerHTML = '';
