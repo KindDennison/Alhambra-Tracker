@@ -28,10 +28,114 @@
     .drawer-card:hover { border-color: #0055a5; box-shadow: 0 2px 8px rgba(0,85,165,0.1); }
     .drawer-card h3 { color: #0055a5; margin-bottom: 1rem; font-size: 1.3rem; border-bottom: 2px solid #0055a5; padding-bottom: 0.5rem; }
     .drawer-contents { margin-bottom: 1rem; min-height: 60px; }
-    .item { background: white; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; border-left: 4px solid #0055a5; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
+
+    /* ── Item base style ── */
+    .item {
+      background: white;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      border-left: 4px solid #28a745;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+
+    /* ── Age colour classes ── */
+    .item.age-green {
+      border-left-color: #28a745;
+    }
+    .item.age-green .item-name {
+      color: #155724;
+    }
+    .item.age-green .item-date-display {
+      color: #28a745;
+    }
+
+    .item.age-amber {
+      border-left-color: #fd7e14;
+    }
+    .item.age-amber .item-name {
+      color: #7d3c00;
+    }
+    .item.age-amber .item-date-display {
+      color: #fd7e14;
+    }
+
+    .item.age-red {
+      border-left-color: #dc3545;
+    }
+    .item.age-red .item-name {
+      color: #721c24;
+    }
+    .item.age-red .item-date-display {
+      color: #dc3545;
+    }
+
     .item-text { flex-grow: 1; }
-    .item-date { font-size: 0.8rem; color: #999; margin-right: 0.5rem; }
-    .delete-btn { background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 3px; cursor: pointer; font-size: 0.85rem; transition: background 0.3s ease; }
+
+    /* ── Date area ── */
+    .item-date-area {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-right: 0.5rem;
+      flex-shrink: 0;
+    }
+    .item-date-display {
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .edit-date-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.2rem;
+      border-radius: 3px;
+      color: #999;
+      transition: color 0.2s ease;
+      line-height: 1;
+    }
+    .edit-date-btn:hover { color: #0055a5; }
+    .date-edit-input {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.3rem;
+      border: 1px solid #0055a5;
+      border-radius: 3px;
+      display: none;
+      width: 130px;
+    }
+    .save-date-btn, .cancel-date-btn {
+      display: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .save-date-btn { background: #28a745; color: white; }
+    .save-date-btn:hover { background: #1e7e34; }
+    .cancel-date-btn { background: #6c757d; color: white; }
+    .cancel-date-btn:hover { background: #5a6268; }
+
+    /* ── Age badge ── */
+    .age-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+      margin-right: 0.4rem;
+      flex-shrink: 0;
+    }
+    .age-green  .age-badge { background: #d4edda; color: #155724; }
+    .age-amber  .age-badge { background: #ffe5d0; color: #7d3c00; }
+    .age-red    .age-badge { background: #f8d7da; color: #721c24; }
+
+    .delete-btn { background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 3px; cursor: pointer; font-size: 0.85rem; transition: background 0.3s ease; flex-shrink: 0; }
     .delete-btn:hover { background: #c82333; }
     .empty-message { color: #999; font-style: italic; text-align: center; padding: 1rem; }
     .add-item-form { background: #f0f8ff; padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 1px solid #0055a5; }
@@ -48,6 +152,29 @@
     .nav-button.apps { background: #0055a5; margin-left: 1rem; }
     .nav-button.apps:hover { background: #003f7f; }
     .subtitle { text-align: center; color: #666; margin-bottom: 2rem; }
+
+    /* ── Colour key legend ── */
+    .colour-key {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .colour-key-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .colour-key-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
     @media (max-width: 768px) { .drawers-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -83,6 +210,22 @@
         <a href="index.html" class="back-button">Back to Apps</a>
       </div>
 
+      <!-- Colour key -->
+      <div class="colour-key">
+        <div class="colour-key-item">
+          <div class="colour-key-dot" style="background:#28a745;"></div>
+          <span>Under 3 months</span>
+        </div>
+        <div class="colour-key-item">
+          <div class="colour-key-dot" style="background:#fd7e14;"></div>
+          <span>3-4.5 months</span>
+        </div>
+        <div class="colour-key-item">
+          <div class="colour-key-dot" style="background:#dc3545;"></div>
+          <span>4.5+ months (throw out soon!)</span>
+        </div>
+      </div>
+
       <div class="drawers-grid" id="drawersContainer"></div>
 
       <div class="navigation">
@@ -110,7 +253,68 @@
     let unsubscribeListener = null;
 
     // -------------------------------------------------------
-    // Step 1: Render the 3 drawer shells immediately (no data needed)
+    // Age helpers
+    // -------------------------------------------------------
+
+    /**
+     * Returns the number of days since a Firestore Timestamp / JS Date.
+     */
+    function getDaysOld(dateAdded) {
+      if (!dateAdded) return 0;
+      try {
+        const date = dateAdded.toDate ? dateAdded.toDate() : new Date(dateAdded);
+        return (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    /**
+     * Returns a CSS class name based on how old the item is.
+     * Green  : 0 - 90 days  (0 - 3 months)
+     * Amber  : 90 - 135 days (3 - 4.5 months)
+     * Red    : 135+ days     (4.5 - 6 months)
+     */
+    function getAgeClass(dateAdded) {
+      const days = getDaysOld(dateAdded);
+      if (days >= 135) return 'age-red';
+      if (days >= 90)  return 'age-amber';
+      return 'age-green';
+    }
+
+    /**
+     * Returns a human-readable age string e.g. "45 days" or "3.2 months".
+     */
+    function getAgeLabel(dateAdded) {
+      const days = getDaysOld(dateAdded);
+      if (days < 1)   return 'Today';
+      if (days < 31)  return Math.round(days) + 'd';
+      return (days / 30.44).toFixed(1) + 'mo';
+    }
+
+    /**
+     * Converts a Firestore Timestamp (or JS Date) to YYYY-MM-DD for <input type="date">.
+     */
+    function toInputDate(dateAdded) {
+      if (!dateAdded) return '';
+      try {
+        const date = dateAdded.toDate ? dateAdded.toDate() : new Date(dateAdded);
+        return date.toISOString().split('T')[0];
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /**
+     * Converts a YYYY-MM-DD string to a Firestore Timestamp (noon local time).
+     */
+    function inputDateToTimestamp(value) {
+      const date = new Date(value + 'T12:00:00');
+      return firebase.firestore.Timestamp.fromDate(date);
+    }
+
+    // -------------------------------------------------------
+    // Render drawer shells (forms only, no items yet)
     // -------------------------------------------------------
     function renderDrawerShells(freezerType) {
       const container = document.getElementById('drawersContainer');
@@ -136,6 +340,10 @@
               <label for="itemDesc_${drawerKey}">Description (Optional)</label>
               <textarea id="itemDesc_${drawerKey}" placeholder="e.g., 2kg pack, expires March 2025"></textarea>
             </div>
+            <div class="form-group">
+              <label for="itemDate_${drawerKey}">Date Added *</label>
+              <input type="date" id="itemDate_${drawerKey}" />
+            </div>
             <button class="add-btn"
               data-freezer="${freezerType}"
               data-drawer="${drawerKey}"
@@ -145,14 +353,16 @@
           </div>
         `;
         container.appendChild(card);
+
+        // Pre-fill date field with today
+        document.getElementById('itemDate_' + drawerKey).value = new Date().toISOString().split('T')[0];
       }
     }
 
     // -------------------------------------------------------
-    // Step 2: Subscribe to Firestore and update drawer contents
+    // Subscribe to Firestore and update drawer contents
     // -------------------------------------------------------
     function subscribeToFreezer(freezerType) {
-      // Unsubscribe from any previous listener
       if (unsubscribeListener) {
         unsubscribeListener();
         unsubscribeListener = null;
@@ -161,7 +371,6 @@
       unsubscribeListener = db.collection('freezerInventory')
         .where('freezer', '==', freezerType)
         .onSnapshot((snapshot) => {
-          // Group items by drawer
           const itemsByDrawer = { drawer1: [], drawer2: [], drawer3: [] };
 
           snapshot.forEach((doc) => {
@@ -171,7 +380,7 @@
             }
           });
 
-          // Sort each drawer by timestamp ascending
+          // Sort each drawer by timestamp ascending (oldest first)
           for (const key in itemsByDrawer) {
             itemsByDrawer[key].sort((a, b) => {
               const ta = a.timestamp ? a.timestamp.toMillis() : 0;
@@ -180,7 +389,6 @@
             });
           }
 
-          // Update each drawer's contents div
           for (let i = 1; i <= 3; i++) {
             const drawerKey = 'drawer' + i;
             const contentsDiv = document.getElementById('contents_' + drawerKey);
@@ -192,17 +400,53 @@
               contentsDiv.innerHTML = '<div class="empty-message">No items in this drawer</div>';
             } else {
               contentsDiv.innerHTML = items.map(item => {
-                let dateStr = 'No date';
-                if (item.dateAdded) {
-                  try { dateStr = item.dateAdded.toDate().toLocaleDateString(); } catch(e) {}
-                }
+                const ageClass   = getAgeClass(item.dateAdded);
+                const ageLabel   = getAgeLabel(item.dateAdded);
+                const inputVal   = toInputDate(item.dateAdded);
+                let   dateStr    = 'No date';
+                try {
+                  if (item.dateAdded) {
+                    dateStr = item.dateAdded.toDate().toLocaleDateString('en-GB');
+                  }
+                } catch(e) {}
+
                 return `
-                  <div class="item">
+                  <div class="item ${ageClass}" data-id="${item.id}">
                     <div class="item-text">
-                      <strong>${item.name}</strong>
+                      <strong class="item-name">${item.name}</strong>
                       ${item.description ? '<br><small>' + item.description + '</small>' : ''}
                     </div>
-                    <span class="item-date">${dateStr}</span>
+
+                    <!-- Age badge + date display / edit controls -->
+                    <span class="age-badge">${ageLabel}</span>
+
+                    <div class="item-date-area">
+                      <!-- Display mode -->
+                      <span class="item-date-display" id="dateDisplay_${item.id}">${dateStr}</span>
+                      <button
+                        class="edit-date-btn"
+                        id="editDateBtn_${item.id}"
+                        data-id="${item.id}"
+                        title="Edit date in freezer">✏</button>
+
+                      <!-- Edit mode (hidden by default) -->
+                      <input
+                        type="date"
+                        class="date-edit-input"
+                        id="dateInput_${item.id}"
+                        value="${inputVal}" />
+                      <button
+                        class="save-date-btn"
+                        id="saveDateBtn_${item.id}"
+                        data-id="${item.id}"
+                        title="Save date">✓</button>
+                      <button
+                        class="cancel-date-btn"
+                        id="cancelDateBtn_${item.id}"
+                        data-id="${item.id}"
+                        title="Cancel">✗</button>
+                    </div>
+
                     <button class="delete-btn" data-id="${item.id}">Delete</button>
                   </div>
                 `;
@@ -224,10 +468,7 @@
       document.getElementById('freezerTitle').textContent =
         freezerType === 'house' ? 'House Freezer' : 'Shed Freezer';
 
-      // Render shells first so forms are always visible
       renderDrawerShells(freezerType);
-
-      // Then subscribe for live data
       subscribeToFreezer(freezerType);
     }
 
@@ -245,7 +486,26 @@
     }
 
     // -------------------------------------------------------
-    // Event delegation for Add and Delete buttons
+    // Toggle edit-date mode helpers
+    // -------------------------------------------------------
+    function enterEditMode(itemId) {
+      document.getElementById('dateDisplay_' + itemId).style.display  = 'none';
+      document.getElementById('editDateBtn_' + itemId).style.display  = 'none';
+      document.getElementById('dateInput_'   + itemId).style.display  = 'block';
+      document.getElementById('saveDateBtn_' + itemId).style.display  = 'block';
+      document.getElementById('cancelDateBtn_' + itemId).style.display = 'block';
+    }
+
+    function exitEditMode(itemId) {
+      document.getElementById('dateDisplay_' + itemId).style.display  = 'block';
+      document.getElementById('editDateBtn_' + itemId).style.display  = 'block';
+      document.getElementById('dateInput_'   + itemId).style.display  = 'none';
+      document.getElementById('saveDateBtn_' + itemId).style.display  = 'none';
+      document.getElementById('cancelDateBtn_' + itemId).style.display = 'none';
+    }
+
+    // -------------------------------------------------------
+    // Event delegation for Add, Delete, and Date Edit buttons
     // -------------------------------------------------------
     document.addEventListener('click', async (e) => {
 
@@ -262,33 +522,78 @@
         }
       }
 
-      // ADD
+      // EDIT DATE: Enter edit mode
+      if (e.target.classList.contains('edit-date-btn')) {
+        const itemId = e.target.dataset.id;
+        enterEditMode(itemId);
+        document.getElementById('dateInput_' + itemId).focus();
+      }
+
+      // SAVE DATE
+      if (e.target.classList.contains('save-date-btn')) {
+        const itemId = e.target.dataset.id;
+        const newDateStr = document.getElementById('dateInput_' + itemId).value;
+
+        if (!newDateStr) {
+          alert('Please select a valid date.');
+          return;
+        }
+
+        try {
+          const newTimestamp = inputDateToTimestamp(newDateStr);
+          await db.collection('freezerInventory').doc(itemId).update({
+            dateAdded: newTimestamp,
+            timestamp: newTimestamp
+          });
+          exitEditMode(itemId);
+        } catch (error) {
+          console.error("Error saving date:", error);
+          alert('Failed to save date. Please try again.');
+        }
+      }
+
+      // CANCEL DATE EDIT
+      if (e.target.classList.contains('cancel-date-btn')) {
+        const itemId = e.target.dataset.id;
+        exitEditMode(itemId);
+      }
+
+      // ADD ITEM
       if (e.target.classList.contains('add-btn')) {
         const freezerType = e.target.dataset.freezer;
         const drawerKey   = e.target.dataset.drawer;
 
         const nameInput = document.getElementById('itemName_' + drawerKey);
         const descInput = document.getElementById('itemDesc_' + drawerKey);
+        const dateInput = document.getElementById('itemDate_' + drawerKey);
 
         const itemName = nameInput.value.trim();
         const itemDesc = descInput.value.trim();
+        const itemDateStr = dateInput.value;
 
         if (!itemName) {
           alert('Please enter an item name.');
           return;
         }
 
+        if (!itemDateStr) {
+          alert('Please select a date.');
+          return;
+        }
+
         try {
+          const dateTimestamp = inputDateToTimestamp(itemDateStr);
           await db.collection('freezerInventory').add({
             freezer:     freezerType,
             drawer:      drawerKey,
             name:        itemName,
             description: itemDesc,
-            dateAdded:   firebase.firestore.FieldValue.serverTimestamp(),
-            timestamp:   firebase.firestore.FieldValue.serverTimestamp()
+            dateAdded:   dateTimestamp,
+            timestamp:   dateTimestamp
           });
           nameInput.value = '';
           descInput.value = '';
+          dateInput.value = new Date().toISOString().split('T')[0];
         } catch (error) {
           console.error("Error adding item:", error);
           alert('Failed to add item. Please try again.');
@@ -298,3 +603,4 @@
   </script>
 </body>
 </html>
+
