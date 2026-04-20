@@ -262,6 +262,17 @@
       text-align: center;
       flex-shrink: 0;
     }
+    .item-price {
+      background: #28a745;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      min-width: 70px;
+      text-align: center;
+      flex-shrink: 0;
+    }
     .qty-controls {
       display: flex;
       gap: 5px;
@@ -278,6 +289,36 @@
     .qty-controls button:hover {
       background-color: #003f7f;
     }
+    .cost-summary {
+      background: #f0f8ff;
+      border: 2px solid #0055a5;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: right;
+    }
+    .cost-summary h3 {
+      color: #0055a5;
+      margin: 0 0 15px 0;
+    }
+    .cost-line {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    .cost-line strong {
+      margin-left: 20px;
+      min-width: 100px;
+      text-align: right;
+    }
+    .cost-total {
+      border-top: 2px solid #0055a5;
+      padding-top: 15px;
+      margin-top: 15px;
+      font-size: 1.3rem;
+      color: #0055a5;
+    }
     .no-items {
         text-align: center;
         color: #666;
@@ -292,6 +333,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 15px;
     }
     .template-card .info {
       flex: 1;
@@ -314,6 +356,25 @@
     }
     .template-card .delete-button:hover {
       background-color: #c82333;
+    }
+    .template-form-section {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .template-form-section h3 {
+      color: #0055a5;
+      margin-top: 0;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .form-row.full {
+      grid-template-columns: 1fr;
     }
     /* Modal styles */
     .modal {
@@ -394,6 +455,17 @@
       position: relative;
       margin-bottom: 15px;
     }
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #0055a5;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      color: #333;
+    }
+    .info-box strong {
+      color: #0055a5;
+    }
     @media (max-width: 768px) {
       .action-buttons {
         flex-direction: column;
@@ -409,6 +481,18 @@
       .qty-controls {
         width: 100%;
         justify-content: flex-start;
+      }
+      .cost-summary {
+        text-align: left;
+      }
+      .cost-line {
+        justify-content: space-between;
+      }
+      .cost-line strong {
+        margin-left: 0;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -428,6 +512,10 @@
 
     <!-- Shopping List Tab -->
     <div class="tab-content active" id="shopping-tab">
+      <div class="info-box">
+        <strong>Pro Tip:</strong> Set up your item templates first on the "Item Templates" tab so locations and prices are saved. Then just add items here and they'll auto-populate!
+      </div>
+
       <form id="addItemForm">
         <label for="itemName">Item Name:</label>
         <div class="form-group">
@@ -441,25 +529,6 @@
         <label for="itemQty">Quantity:</label>
         <input type="number" id="itemQty" placeholder="e.g., 2" min="1" value="1" required />
 
-        <label for="itemIsle">Isle:</label>
-        <input type="text" id="itemIsle" placeholder="e.g., 1" required />
-
-        <label for="itemPosition">Position:</label>
-        <select id="itemPosition" required>
-          <option value="">Select Position</option>
-          <option value="Start">Start</option>
-          <option value="Middle">Middle</option>
-          <option value="End">End</option>
-        </select>
-
-        <label for="itemSide">Side:</label>
-        <select id="itemSide" required>
-          <option value="">Select Side</option>
-          <option value="Left">Left</option>
-          <option value="Right">Right</option>
-          <option value="End">End</option>
-        </select>
-
         <button type="submit">Add Item</button>
       </form>
 
@@ -472,6 +541,22 @@
         <h2>Your List</h2>
         <div id="itemsContainer">
           <p class="no-items">No items in your list yet. Add some above!</p>
+        </div>
+      </div>
+
+      <div class="cost-summary" id="costSummary" style="display: none;">
+        <h3>Cost Summary</h3>
+        <div class="cost-line">
+          <span>Unpurchased Items:</span>
+          <strong id="unpurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line">
+          <span>Purchased Items:</span>
+          <strong id="purchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line cost-total">
+          <span>Estimated Total:</span>
+          <strong id="totalCost">£0.00</strong>
         </div>
       </div>
     </div>
@@ -493,14 +578,55 @@
     <!-- Item Templates Tab -->
     <div class="tab-content" id="templates-tab">
       <h2>Manage Item Templates</h2>
-      <p style="color: #666; margin-bottom: 20px;">These are saved item locations. When you add an item to your shopping list, it will auto-populate with the stored location.</p>
+      <p style="color: #666; margin-bottom: 20px;">Set up your item locations and prices here once. When you add items to your shopping list, they'll automatically use these details.</p>
+      
+      <div class="template-form-section">
+        <h3>Add New Template</h3>
+        <form id="addTemplateForm">
+          <label for="templateItemName">Item Name:</label>
+          <input type="text" id="templateItemName" placeholder="e.g., Apples" required />
+
+          <div class="form-row">
+            <div>
+              <label for="templateIsle">Isle:</label>
+              <input type="number" id="templateIsle" placeholder="e.g., 1" required />
+            </div>
+            <div>
+              <label for="templatePosition">Position:</label>
+              <select id="templatePosition" required>
+                <option value="">Select Position</option>
+                <option value="Start">Start</option>
+                <option value="Middle">Middle</option>
+                <option value="End">End</option>
+              </select>
+            </div>
+            <div>
+              <label for="templateSide">Side:</label>
+              <select id="templateSide" required>
+                <option value="">Select Side</option>
+                <option value="Left">Left</option>
+                <option value="Right">Right</option>
+                <option value="End">End</option>
+              </select>
+            </div>
+            <div>
+              <label for="templatePrice">Price (per unit):</label>
+              <input type="number" id="templatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+            </div>
+          </div>
+
+          <button type="submit">Add Template</button>
+        </form>
+      </div>
+
+      <h3>Your Templates</h3>
       <div id="templatesContainer">
-        <p class="no-items">No item templates yet. Add items to your shopping list to create templates!</p>
+        <p class="no-items">No item templates yet. Add one above!</p>
       </div>
     </div>
   </div>
 
-  <!-- Edit Modal -->
+  <!-- Edit Item Modal (simplified for shopping list items) -->
   <div id="editModal" class="modal">
     <div class="modal-content">
       <span class="modal-close">&times;</span>
@@ -515,27 +641,47 @@
         <label for="editItemQty">Quantity:</label>
         <input type="number" id="editItemQty" min="1" required />
 
-        <label for="editItemIsle">Isle:</label>
-        <input type="text" id="editItemIsle" required />
+        <div class="modal-buttons">
+          <button type="button" class="cancel-button" id="cancelEditButton">Cancel</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        <label for="editItemPosition">Position:</label>
-        <select id="editItemPosition" required>
+  <!-- Edit Template Modal -->
+  <div id="editTemplateModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div class="modal-header">Edit Template</div>
+      <form id="editTemplateForm">
+        <label for="editTemplateItemName">Item Name:</label>
+        <input type="text" id="editTemplateItemName" disabled />
+
+        <label for="editTemplateIsle">Isle:</label>
+        <input type="number" id="editTemplateIsle" required />
+
+        <label for="editTemplatePosition">Position:</label>
+        <select id="editTemplatePosition" required>
           <option value="">Select Position</option>
           <option value="Start">Start</option>
           <option value="Middle">Middle</option>
           <option value="End">End</option>
         </select>
 
-        <label for="editItemSide">Side:</label>
-        <select id="editItemSide" required>
+        <label for="editTemplateSide">Side:</label>
+        <select id="editTemplateSide" required>
           <option value="">Select Side</option>
           <option value="Left">Left</option>
           <option value="Right">Right</option>
           <option value="End">End</option>
         </select>
 
+        <label for="editTemplatePrice">Price (per unit):</label>
+        <input type="number" id="editTemplatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+
         <div class="modal-buttons">
-          <button type="button" class="cancel-button" id="cancelEditButton">Cancel</button>
+          <button type="button" class="cancel-button" id="cancelEditTemplateButton">Cancel</button>
           <button type="submit">Save Changes</button>
         </div>
       </form>
@@ -582,37 +728,48 @@
 
     // Modal setup
     const editModal = document.getElementById('editModal');
-    const modalClose = document.querySelector('.modal-close');
+    const editTemplateModal = document.getElementById('editTemplateModal');
+    const modalClose = document.querySelectorAll('.modal-close');
     const cancelEditButton = document.getElementById('cancelEditButton');
+    const cancelEditTemplateButton = document.getElementById('cancelEditTemplateButton');
     let editingItemId = null;
-    let editingItemIsTemplate = false;
+    let editingTemplateId = null;
 
-    modalClose.addEventListener('click', () => {
-      editModal.classList.remove('show');
+    modalClose.forEach(close => {
+      close.addEventListener('click', () => {
+        editModal.classList.remove('show');
+        editTemplateModal.classList.remove('show');
+      });
     });
 
     cancelEditButton.addEventListener('click', () => {
       editModal.classList.remove('show');
     });
 
+    cancelEditTemplateButton.addEventListener('click', () => {
+      editTemplateModal.classList.remove('show');
+    });
+
     window.addEventListener('click', (e) => {
       if (e.target === editModal) {
         editModal.classList.remove('show');
+      }
+      if (e.target === editTemplateModal) {
+        editTemplateModal.classList.remove('show');
       }
     });
 
     // Elements
     const addItemForm = document.getElementById('addItemForm');
+    const addTemplateForm = document.getElementById('addTemplateForm');
     const itemNameInput = document.getElementById('itemName');
     const itemDescriptionInput = document.getElementById('itemDescription');
     const itemQtyInput = document.getElementById('itemQty');
-    const itemIsleInput = document.getElementById('itemIsle');
-    const itemPositionSelect = document.getElementById('itemPosition');
-    const itemSideSelect = document.getElementById('itemSide');
     const itemsContainer = document.getElementById('itemsContainer');
     const templatesContainer = document.getElementById('templatesContainer');
     const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
     const floorPlanCanvas = document.getElementById('floorPlanCanvas');
+    const costSummary = document.getElementById('costSummary');
 
     let allShoppingItems = [];
     let allTemplates = [];
@@ -649,9 +806,6 @@
         suggestionDiv.textContent = template.name;
         suggestionDiv.addEventListener('click', () => {
           itemNameInput.value = template.name;
-          itemIsleInput.value = template.isle;
-          itemPositionSelect.value = template.position;
-          itemSideSelect.value = template.side;
           itemDescriptionInput.value = '';
           itemQtyInput.value = 1;
           autocompleteSuggestions.innerHTML = '';
@@ -675,12 +829,16 @@
       const itemName = itemNameInput.value.trim();
       const itemDescription = itemDescriptionInput.value.trim();
       const itemQty = parseInt(itemQtyInput.value);
-      const itemIsle = parseInt(itemIsleInput.value);
-      const itemPosition = itemPositionSelect.value;
-      const itemSide = itemSideSelect.value;
 
-      if (!itemName || isNaN(itemQty) || itemQty < 1 || isNaN(itemIsle) || !itemPosition || !itemSide) {
+      if (!itemName || isNaN(itemQty) || itemQty < 1) {
         alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      const template = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
+
+      if (!template) {
+        alert('This item does not exist in your templates. Please add it to Item Templates first.');
         return;
       }
 
@@ -689,22 +847,12 @@
           name: itemName,
           description: itemDescription,
           qty: itemQty,
-          isle: itemIsle,
-          position: itemPosition,
-          side: itemSide,
+          isle: template.isle,
+          position: template.position,
+          side: template.side,
           purchased: false,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
-        if (!existingTemplate) {
-          await db.collection('itemTemplates').add({
-            name: itemName,
-            isle: itemIsle,
-            position: itemPosition,
-            side: itemSide
-          });
-        }
 
         addItemForm.reset();
         itemQtyInput.value = 1;
@@ -715,12 +863,82 @@
       }
     });
 
+    // Add template form
+    addTemplateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const templateName = document.getElementById('templateItemName').value.trim();
+      const templateIsle = parseInt(document.getElementById('templateIsle').value);
+      const templatePosition = document.getElementById('templatePosition').value;
+      const templateSide = document.getElementById('templateSide').value;
+      const templatePrice = parseFloat(document.getElementById('templatePrice').value) || 0;
+
+      if (!templateName || isNaN(templateIsle) || !templatePosition || !templateSide) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
+      if (existingTemplate) {
+        alert('This item template already exists!');
+        return;
+      }
+
+      try {
+        await db.collection('itemTemplates').add({
+          name: templateName,
+          isle: templateIsle,
+          position: templatePosition,
+          side: templateSide,
+          price: templatePrice
+        });
+
+        addTemplateForm.reset();
+        document.getElementById('templateItemName').focus();
+        alert('Template added successfully!');
+      } catch (error) {
+        console.error("Error adding template: ", error);
+        alert("Failed to add template. Please try again.");
+      }
+    });
+
+    // Calculate costs
+    function calculateCosts() {
+      let unpurchasedTotal = 0;
+      let purchasedTotal = 0;
+
+      allShoppingItems.forEach(item => {
+        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
+        const price = template ? (template.price || 0) : 0;
+        const itemTotal = price * item.qty;
+
+        if (item.purchased) {
+          purchasedTotal += itemTotal;
+        } else {
+          unpurchasedTotal += itemTotal;
+        }
+      });
+
+      const totalCost = unpurchasedTotal + purchasedTotal;
+
+      document.getElementById('unpurchasedCost').textContent = '£' + unpurchasedTotal.toFixed(2);
+      document.getElementById('purchasedCost').textContent = '£' + purchasedTotal.toFixed(2);
+      document.getElementById('totalCost').textContent = '£' + totalCost.toFixed(2);
+
+      if (allShoppingItems.length > 0) {
+        costSummary.style.display = 'block';
+      } else {
+        costSummary.style.display = 'none';
+      }
+    }
+
     // Function to render the shopping list
     const renderShoppingList = (items) => {
       itemsContainer.innerHTML = '';
 
       if (items.length === 0) {
         itemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some above!</p>';
+        costSummary.style.display = 'none';
         return;
       }
 
@@ -747,6 +965,10 @@
       });
 
       items.forEach(item => {
+        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
+        const price = template ? (template.price || 0) : 0;
+        const itemTotal = (price * item.qty).toFixed(2);
+
         const itemCard = document.createElement('div');
         itemCard.classList.add('item-card');
         if (item.purchased) {
@@ -759,6 +981,7 @@
             <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
           </div>
           <div class="item-qty">${item.qty}x</div>
+          <div class="item-price">£${itemTotal}</div>
           <div class="qty-controls">
             <button class="qty-decrease-button" data-id="${item.id}" type="button">-</button>
             <button class="qty-increase-button" data-id="${item.id}" type="button">+</button>
@@ -773,6 +996,8 @@
         `;
         itemsContainer.appendChild(itemCard);
       });
+
+      calculateCosts();
     };
 
     // Function to render templates
@@ -780,7 +1005,7 @@
       templatesContainer.innerHTML = '';
 
       if (allTemplates.length === 0) {
-        templatesContainer.innerHTML = '<p class="no-items">No item templates yet. Add items to your shopping list to create templates!</p>';
+        templatesContainer.innerHTML = '<p class="no-items">No item templates yet. Add one above!</p>';
         return;
       }
 
@@ -792,7 +1017,8 @@
         templateCard.innerHTML = `
           <div class="info">
             <strong>${template.name}</strong> <br>
-            Isle ${template.isle}, ${template.position}, ${template.side}
+            Isle ${template.isle}, ${template.position}, ${template.side} <br>
+            <small>Price: £${(template.price || 0).toFixed(2)} per unit</small>
           </div>
           <div>
             <button class="edit-button" data-id="${template.id}" data-name="${template.name}" type="button">Edit</button>
@@ -1067,12 +1293,16 @@
       });
 
       unpurchasedItems.forEach((item, index) => {
+        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
+        const price = template ? (template.price || 0) : 0;
+        const itemTotal = (price * item.qty).toFixed(2);
+
         const routeItem = document.createElement('div');
         routeItem.classList.add('route-item');
         routeItem.innerHTML = `
           <div class="route-number">${index + 1}</div>
           <div class="route-details">
-            <strong>${item.name} (x${item.qty})</strong>
+            <strong>${item.name} (x${item.qty}) - £${itemTotal}</strong>
             ${item.description ? `<span class="route-description">${item.description}</span>` : ''}
             <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
           </div>
@@ -1179,7 +1409,6 @@
         } else if (e.target.classList.contains('edit-button') && e.target.closest('#itemsContainer')) {
             const itemId = e.target.dataset.id;
             editingItemId = itemId;
-            editingItemIsTemplate = false;
             
             try {
               const doc = await db.collection('shoppingList').doc(itemId).get();
@@ -1188,9 +1417,7 @@
                 document.getElementById('editItemName').value = data.name;
                 document.getElementById('editItemDescription').value = data.description || '';
                 document.getElementById('editItemQty').value = data.qty || 1;
-                document.getElementById('editItemIsle').value = data.isle;
-                document.getElementById('editItemPosition').value = data.position;
-                document.getElementById('editItemSide').value = data.side;
+                
                 editModal.classList.add('show');
               }
             } catch (error) {
@@ -1222,57 +1449,70 @@
             const template = allTemplates.find(t => t.id === templateId);
             
             if (template) {
-              editingItemId = templateId;
-              editingItemIsTemplate = true;
-              document.getElementById('editItemName').value = template.name;
-              document.getElementById('editItemDescription').value = '';
-              document.getElementById('editItemQty').value = 1;
-              document.getElementById('editItemIsle').value = template.isle;
-              document.getElementById('editItemPosition').value = template.position;
-              document.getElementById('editItemSide').value = template.side;
-              editModal.classList.add('show');
+              editingTemplateId = templateId;
+              document.getElementById('editTemplateItemName').value = template.name;
+              document.getElementById('editTemplateIsle').value = template.isle;
+              document.getElementById('editTemplatePosition').value = template.position;
+              document.getElementById('editTemplateSide').value = template.side;
+              document.getElementById('editTemplatePrice').value = template.price || 0;
+              editTemplateModal.classList.add('show');
             }
         }
     });
 
-    // Edit form submission
+    // Edit item form submission
     document.getElementById('editForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const editIsle = parseInt(document.getElementById('editItemIsle').value);
-      const editPosition = document.getElementById('editItemPosition').value;
-      const editSide = document.getElementById('editItemSide').value;
       const editDescription = document.getElementById('editItemDescription').value.trim();
       const editQty = parseInt(document.getElementById('editItemQty').value);
 
-      if (isNaN(editIsle) || !editPosition || !editSide || isNaN(editQty) || editQty < 1) {
+      if (isNaN(editQty) || editQty < 1) {
         alert('Please fill in all required fields correctly.');
         return;
       }
 
       try {
-        if (editingItemIsTemplate) {
-          await db.collection('itemTemplates').doc(editingItemId).update({
-            isle: editIsle,
-            position: editPosition,
-            side: editSide
-          });
-        } else {
-          await db.collection('shoppingList').doc(editingItemId).update({
-            isle: editIsle,
-            position: editPosition,
-            side: editSide,
-            description: editDescription,
-            qty: editQty
-          });
-        }
+        await db.collection('shoppingList').doc(editingItemId).update({
+          description: editDescription,
+          qty: editQty
+        });
 
         editModal.classList.remove('show');
         editingItemId = null;
-        editingItemIsTemplate = false;
       } catch (error) {
         console.error("Error updating document: ", error);
         alert("Failed to update item. Please try again.");
+      }
+    });
+
+    // Edit template form submission
+    document.getElementById('editTemplateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editTemplateIsle = parseInt(document.getElementById('editTemplateIsle').value);
+      const editTemplatePosition = document.getElementById('editTemplatePosition').value;
+      const editTemplateSide = document.getElementById('editTemplateSide').value;
+      const editTemplatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
+
+      if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      try {
+        await db.collection('itemTemplates').doc(editingTemplateId).update({
+          isle: editTemplateIsle,
+          position: editTemplatePosition,
+          side: editTemplateSide,
+          price: editTemplatePrice
+        });
+
+        editTemplateModal.classList.remove('show');
+        editingTemplateId = null;
+      } catch (error) {
+        console.error("Error updating template: ", error);
+        alert("Failed to update template. Please try again.");
       }
     });
   </script>
