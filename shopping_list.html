@@ -48,6 +48,7 @@
       gap: 10px;
       margin-bottom: 20px;
       border-bottom: 2px solid #eee;
+      flex-wrap: wrap;
     }
     .tab-button {
       padding: 10px 20px;
@@ -65,6 +66,9 @@
     }
     .tab-button:hover {
       color: #0055a5;
+    }
+    .tab-button.mobile-only {
+      display: none;
     }
     .tab-content {
       display: none;
@@ -469,7 +473,75 @@
     .info-box strong {
       color: #0055a5;
     }
+
+    /* Mobile View Styles */
+    .mobile-item-card {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .mobile-item-card.purchased {
+      background: #e6ffe6;
+      opacity: 0.7;
+    }
+    .mobile-item-name {
+      grid-column: 1;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .mobile-item-qty {
+      background: #0055a5;
+      color: white;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-align: center;
+      min-width: 50px;
+    }
+    .mobile-item-price {
+      background: #28a745;
+      color: white;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-align: center;
+      min-width: 65px;
+    }
+    .mobile-purchased-button {
+      background: #0055a5;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    .mobile-purchased-button:hover {
+      background: #003f7f;
+    }
+    .mobile-purchased-button.is-purchased {
+      background: #6c757d;
+    }
+    .mobile-purchased-button.is-purchased:hover {
+      background: #5a6268;
+    }
+
     @media (max-width: 768px) {
+      .tab-button.mobile-only {
+        display: block;
+      }
+      .tab-button.desktop-only {
+        display: none;
+      }
       .action-buttons {
         flex-direction: column;
       }
@@ -508,12 +580,13 @@
     </div>
 
     <div class="tabs">
-      <button class="tab-button active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button desktop-only active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button mobile-only" data-tab="mobile">Mobile View</button>
       <button class="tab-button" data-tab="route">Shop Route</button>
       <button class="tab-button" data-tab="templates">Item Templates</button>
     </div>
 
-    <!-- Shopping List Tab -->
+    <!-- Shopping List Tab (Desktop) -->
     <div class="tab-content active" id="shopping-tab">
       <form id="addItemForm">
         <label for="itemName">Item Name:</label>
@@ -557,6 +630,18 @@
       <div class="action-buttons">
         <button class="danger" onclick="clearAllPurchased()">Clear Purchased Items</button>
         <button onclick="markAllPurchased()">Mark All as Purchased</button>
+      </div>
+    </div>
+
+    <!-- Mobile View Tab -->
+    <div class="tab-content" id="mobile-tab">
+      <h2>Shopping Mode</h2>
+      <div id="mobileItemsContainer">
+        <p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>
+      </div>
+
+      <div class="action-buttons" style="margin-top: 30px;">
+        <button class="danger" onclick="clearAllPurchased()">Clear Purchased</button>
       </div>
     </div>
 
@@ -775,6 +860,7 @@
     const itemDescriptionInput = document.getElementById('itemDescription');
     const itemQtyInput = document.getElementById('itemQty');
     const itemsContainer = document.getElementById('itemsContainer');
+    const mobileItemsContainer = document.getElementById('mobileItemsContainer');
     const templatesContainer = document.getElementById('templatesContainer');
     const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
     const floorPlanCanvas = document.getElementById('floorPlanCanvas');
@@ -790,8 +876,8 @@
         allTemplates.push({ id: doc.id, ...doc.data() });
       });
       renderTemplates();
-      // Re-render shopping list when templates change to get live updates
       renderShoppingList(allShoppingItems);
+      renderMobileView(allShoppingItems);
       renderRouteGuide(allShoppingItems);
       if (document.getElementById('route-tab').classList.contains('active')) {
         drawFloorPlan();
@@ -997,7 +1083,6 @@
         const template = getTemplateForItem(item.name);
         
         if (!template) {
-          // Skip items without a template
           return;
         }
 
@@ -1033,6 +1118,74 @@
       });
 
       calculateCosts();
+    };
+
+    // Function to render mobile view
+    const renderMobileView = (items) => {
+      mobileItemsContainer.innerHTML = '';
+
+      if (items.length === 0) {
+        mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
+        return;
+      }
+
+      const positionOrder = {
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
+      };
+
+      items.sort((a, b) => {
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
+
+        if (!templateA || !templateB) return 0;
+
+        if (a.purchased !== b.purchased) {
+            return a.purchased - b.purchased;
+        }
+        if (templateA.isle !== templateB.isle) {
+          return templateA.isle - templateB.isle;
+        }
+        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+          return positionOrder[templateA.position] - positionOrder[templateB.position];
+        }
+        const pickOrderA = templateA.pickOrder || 1;
+        const pickOrderB = templateB.pickOrder || 1;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
+        }
+        if (templateA.side !== templateB.side) {
+            return templateA.side.localeCompare(templateB.side);
+        }
+        return 0;
+      });
+
+      items.forEach(item => {
+        const template = getTemplateForItem(item.name);
+        
+        if (!template) {
+          return;
+        }
+
+        const price = template.price || 0;
+        const itemTotal = (price * item.qty).toFixed(2);
+
+        const mobileCard = document.createElement('div');
+        mobileCard.classList.add('mobile-item-card');
+        if (item.purchased) {
+            mobileCard.classList.add('purchased');
+        }
+        mobileCard.innerHTML = `
+          <div class="mobile-item-name">${item.name}</div>
+          <div class="mobile-item-qty">${item.qty}x</div>
+          <div class="mobile-item-price">£${itemTotal}</div>
+          <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
+            ${item.purchased ? 'Done' : 'Got It'}
+          </button>
+        `;
+        mobileItemsContainer.appendChild(mobileCard);
+      });
     };
 
     // Function to render templates
@@ -1072,6 +1225,7 @@
           allShoppingItems.push({ id: doc.id, ...doc.data() });
         });
         renderShoppingList(allShoppingItems);
+        renderMobileView(allShoppingItems);
         renderRouteGuide(allShoppingItems);
         if (document.getElementById('route-tab').classList.contains('active')) {
             drawFloorPlan();
@@ -1452,7 +1606,7 @@
                     alert("Failed to delete item. Please try again.");
                 }
             }
-        } else if (e.target.classList.contains('purchased-button')) {
+        } else if (e.target.classList.contains('purchased-button') && e.target.closest('#itemsContainer')) {
             const itemId = e.target.dataset.id;
             const currentPurchasedStatus = e.target.dataset.purchased === 'true';
             try {
@@ -1487,6 +1641,22 @@
             const itemId = e.target.dataset.id;
             updateQuantity(itemId, false);
         }
+    });
+
+    // Event delegation for mobile view actions
+    mobileItemsContainer.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('mobile-purchased-button')) {
+        const itemId = e.target.dataset.id;
+        const currentPurchasedStatus = e.target.dataset.purchased === 'true';
+        try {
+          await db.collection('shoppingList').doc(itemId).update({
+            purchased: !currentPurchasedStatus
+          });
+        } catch (error) {
+          console.error("Error updating document: ", error);
+          alert("Failed to update item status. Please try again.");
+        }
+      }
     });
 
     // Event delegation for template actions
