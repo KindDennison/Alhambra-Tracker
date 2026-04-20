@@ -14,6 +14,158 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .back-button { display: inline-block; padding: 10px 20px; background: #6c757d; color: white; border: none; cursor: pointer; border-radius: 4px; text-decoration: none; transition: background 0.3s ease; font-size: 1rem; }
     .back-button:hover { background: #5a6268; }
+
+    /* ── Search Section ── */
+    .search-section {
+      background: #f0f8ff;
+      border: 2px solid #0055a5;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .search-section h2 {
+      color: #0055a5;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    .search-results {
+      display: none;
+      margin-top: 1rem;
+    }
+    .search-results.active {
+      display: block;
+    }
+    .search-result-item {
+      background: white;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      border-left: 4px solid #0055a5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .search-result-item.age-green {
+      border-left-color: #28a745;
+    }
+    .search-result-item.age-amber {
+      border-left-color: #fd7e14;
+    }
+    .search-result-item.age-red {
+      border-left-color: #dc3545;
+    }
+    .search-result-text {
+      flex-grow: 1;
+    }
+    .search-result-name {
+      font-weight: bold;
+      color: #333;
+    }
+    .search-result-location {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+    .search-result-info {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-shrink: 0;
+      margin-left: 1rem;
+    }
+    .search-result-age {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .search-result-age.age-green {
+      background: #d4edda;
+      color: #155724;
+    }
+    .search-result-age.age-amber {
+      background: #ffe5d0;
+      color: #7d3c00;
+    }
+    .search-result-age.age-red {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .no-results {
+      color: #999;
+      font-style: italic;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* ── Red Items Alert ── */
+    .red-items-section {
+      background: #fff3cd;
+      border: 2px solid #dc3545;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .red-items-section h2 {
+      color: #dc3545;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .red-items-section h2::before {
+      content: "⚠";
+      font-size: 1.4rem;
+    }
+    .red-item-entry {
+      background: white;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      border-left: 4px solid #dc3545;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .red-item-text {
+      flex-grow: 1;
+    }
+    .red-item-name {
+      font-weight: bold;
+      color: #721c24;
+    }
+    .red-item-location {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+    .red-item-badge {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 0.3rem 0.6rem;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .no-red-items {
+      color: #28a745;
+      font-weight: bold;
+      text-align: center;
+      padding: 1rem;
+    }
+
     .freezer-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
     .freezer-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 12px; text-align: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .freezer-card:hover { transform: translateY(-10px); box-shadow: 0 8px 12px rgba(0,0,0,0.2); }
@@ -40,6 +192,8 @@
       justify-content: space-between;
       align-items: center;
       font-size: 0.95rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
 
     /* ── Age colour classes ── */
@@ -73,14 +227,13 @@
       color: #dc3545;
     }
 
-    .item-text { flex-grow: 1; }
+    .item-text { flex-grow: 1; min-width: 150px; }
 
     /* ── Date area ── */
     .item-date-area {
       display: flex;
       align-items: center;
       gap: 0.3rem;
-      margin-right: 0.5rem;
       flex-shrink: 0;
     }
     .item-date-display {
@@ -115,6 +268,7 @@
       padding: 0.2rem 0.4rem;
       border-radius: 3px;
       font-weight: bold;
+      flex-shrink: 0;
     }
     .save-date-btn { background: #28a745; color: white; }
     .save-date-btn:hover { background: #1e7e34; }
@@ -128,12 +282,47 @@
       border-radius: 10px;
       font-weight: bold;
       white-space: nowrap;
-      margin-right: 0.4rem;
       flex-shrink: 0;
     }
     .age-green  .age-badge { background: #d4edda; color: #155724; }
     .age-amber  .age-badge { background: #ffe5d0; color: #7d3c00; }
     .age-red    .age-badge { background: #f8d7da; color: #721c24; }
+
+    /* ── Move drawer controls ── */
+    .item-controls {
+      display: flex;
+      gap: 0.3rem;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .move-drawer-select {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+      background: #f9f9f9;
+      display: none;
+    }
+    .move-drawer-select.active {
+      display: block;
+    }
+    .move-btn {
+      background: #0055a5;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+    .move-btn:hover { background: #003f7f; }
+    .move-btn.cancel {
+      background: #6c757d;
+    }
+    .move-btn.cancel:hover { background: #5a6268; }
 
     .delete-btn { background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 3px; cursor: pointer; font-size: 0.85rem; transition: background 0.3s ease; flex-shrink: 0; }
     .delete-btn:hover { background: #c82333; }
@@ -175,7 +364,12 @@
       flex-shrink: 0;
     }
 
-    @media (max-width: 768px) { .drawers-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+      .drawers-grid { grid-template-columns: 1fr; }
+      .item { flex-direction: column; align-items: flex-start; }
+      .item-controls { width: 100%; }
+      .search-result-info { flex-direction: column; width: 100%; align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
@@ -188,6 +382,29 @@
         <a href="index.html" class="back-button">Back to Apps</a>
       </div>
       <p class="subtitle">Select a freezer to view and manage its contents</p>
+
+      <!-- Search Section -->
+      <div class="search-section">
+        <h2>Search for an Item</h2>
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="e.g., Chicken, Beef, Ice Cream..."
+          autocomplete="off" />
+        <div class="search-results" id="searchResults">
+          <!-- Results populate here -->
+        </div>
+      </div>
+
+      <!-- Red Items Alert Section -->
+      <div class="red-items-section" id="redItemsSection">
+        <h2>Items Needing Attention (4.5+ months)</h2>
+        <div id="redItemsList">
+          <div class="no-red-items">All clear! No items need throwing out.</div>
+        </div>
+      </div>
+
       <div class="freezer-selector">
         <div class="freezer-card" onclick="selectFreezer('house')">
           <img src="https://img.icons8.com/ios-filled/80/ffffff/fridge.png" alt="House Freezer"/>
@@ -251,14 +468,12 @@
 
     let currentFreezer = null;
     let unsubscribeListener = null;
+    let allItems = []; // Store all items for search and red items
 
     // -------------------------------------------------------
     // Age helpers
     // -------------------------------------------------------
 
-    /**
-     * Returns the number of days since a Firestore Timestamp / JS Date.
-     */
     function getDaysOld(dateAdded) {
       if (!dateAdded) return 0;
       try {
@@ -269,12 +484,6 @@
       }
     }
 
-    /**
-     * Returns a CSS class name based on how old the item is.
-     * Green  : 0 - 90 days  (0 - 3 months)
-     * Amber  : 90 - 135 days (3 - 4.5 months)
-     * Red    : 135+ days     (4.5 - 6 months)
-     */
     function getAgeClass(dateAdded) {
       const days = getDaysOld(dateAdded);
       if (days >= 135) return 'age-red';
@@ -282,9 +491,6 @@
       return 'age-green';
     }
 
-    /**
-     * Returns a human-readable age string e.g. "45 days" or "3.2 months".
-     */
     function getAgeLabel(dateAdded) {
       const days = getDaysOld(dateAdded);
       if (days < 1)   return 'Today';
@@ -292,9 +498,6 @@
       return (days / 30.44).toFixed(1) + 'mo';
     }
 
-    /**
-     * Converts a Firestore Timestamp (or JS Date) to YYYY-MM-DD for <input type="date">.
-     */
     function toInputDate(dateAdded) {
       if (!dateAdded) return '';
       try {
@@ -305,16 +508,125 @@
       }
     }
 
-    /**
-     * Converts a YYYY-MM-DD string to a Firestore Timestamp (noon local time).
-     */
     function inputDateToTimestamp(value) {
       const date = new Date(value + 'T12:00:00');
       return firebase.firestore.Timestamp.fromDate(date);
     }
 
+    function getDateString(dateAdded) {
+      let dateStr = 'No date';
+      try {
+        if (dateAdded) {
+          dateStr = dateAdded.toDate().toLocaleDateString('en-GB');
+        }
+      } catch(e) {}
+      return dateStr;
+    }
+
     // -------------------------------------------------------
-    // Render drawer shells (forms only, no items yet)
+    // Update Red Items Section
+    // -------------------------------------------------------
+    function updateRedItemsSection() {
+      const redItems = allItems.filter(item => {
+        const ageClass = getAgeClass(item.dateAdded);
+        return ageClass === 'age-red';
+      });
+
+      const redItemsList = document.getElementById('redItemsList');
+
+      if (redItems.length === 0) {
+        redItemsList.innerHTML = '<div class="no-red-items">All clear! No items need throwing out.</div>';
+      } else {
+        redItemsList.innerHTML = redItems.map(item => {
+          const freezerName = item.freezer === 'house' ? 'House Freezer' : 'Shed Freezer';
+          const drawerNum = item.drawer.replace('drawer', '');
+          const ageLabel = getAgeLabel(item.dateAdded);
+
+          return `
+            <div class="red-item-entry">
+              <div class="red-item-text">
+                <div class="red-item-name">${item.name}</div>
+                <div class="red-item-location">
+                  ${freezerName} - Drawer ${drawerNum} (${item.description ? item.description : 'No description'})
+                </div>
+              </div>
+              <span class="red-item-badge">${ageLabel}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // -------------------------------------------------------
+    // Search Functionality
+    // -------------------------------------------------------
+    function performSearch(query) {
+      const searchResults = document.getElementById('searchResults');
+
+      if (!query.trim()) {
+        searchResults.classList.remove('active');
+        return;
+      }
+
+      const lowerQuery = query.toLowerCase();
+      const results = allItems.filter(item =>
+        item.name.toLowerCase().includes(lowerQuery) ||
+        (item.description && item.description.toLowerCase().includes(lowerQuery))
+      );
+
+      if (results.length === 0) {
+        searchResults.innerHTML = '<div class="no-results">No items found.</div>';
+      } else {
+        searchResults.innerHTML = results.map(item => {
+          const freezerName = item.freezer === 'house' ? 'House Freezer' : 'Shed Freezer';
+          const drawerNum = item.drawer.replace('drawer', '');
+          const ageClass = getAgeClass(item.dateAdded);
+          const ageLabel = getAgeLabel(item.dateAdded);
+          const dateStr = getDateString(item.dateAdded);
+
+          return `
+            <div class="search-result-item ${ageClass}">
+              <div class="search-result-text">
+                <div class="search-result-name">${item.name}</div>
+                <div class="search-result-location">
+                  ${freezerName} - Drawer ${drawerNum}
+                  ${item.description ? ' - ' + item.description : ''}
+                </div>
+              </div>
+              <div class="search-result-info">
+                <span class="search-result-age ${ageClass}">${ageLabel}</span>
+                <span style="font-size: 0.8rem; color: #999;">${dateStr}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      searchResults.classList.add('active');
+    }
+
+    // -------------------------------------------------------
+    // Subscribe to all items (for search and red items)
+    // -------------------------------------------------------
+    function subscribeToAllItems() {
+      db.collection('freezerInventory').onSnapshot((snapshot) => {
+        allItems = [];
+        snapshot.forEach((doc) => {
+          allItems.push({ id: doc.id, ...doc.data() });
+        });
+
+        updateRedItemsSection();
+
+        // If search is active, re-perform it
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+          performSearch(searchInput.value);
+        }
+      });
+    }
+
+    // -------------------------------------------------------
+    // Render drawer shells
     // -------------------------------------------------------
     function renderDrawerShells(freezerType) {
       const container = document.getElementById('drawersContainer');
@@ -354,13 +666,12 @@
         `;
         container.appendChild(card);
 
-        // Pre-fill date field with today
         document.getElementById('itemDate_' + drawerKey).value = new Date().toISOString().split('T')[0];
       }
     }
 
     // -------------------------------------------------------
-    // Subscribe to Firestore and update drawer contents
+    // Subscribe to Freezer
     // -------------------------------------------------------
     function subscribeToFreezer(freezerType) {
       if (unsubscribeListener) {
@@ -380,7 +691,6 @@
             }
           });
 
-          // Sort each drawer by timestamp ascending (oldest first)
           for (const key in itemsByDrawer) {
             itemsByDrawer[key].sort((a, b) => {
               const ta = a.timestamp ? a.timestamp.toMillis() : 0;
@@ -403,12 +713,7 @@
                 const ageClass   = getAgeClass(item.dateAdded);
                 const ageLabel   = getAgeLabel(item.dateAdded);
                 const inputVal   = toInputDate(item.dateAdded);
-                let   dateStr    = 'No date';
-                try {
-                  if (item.dateAdded) {
-                    dateStr = item.dateAdded.toDate().toLocaleDateString('en-GB');
-                  }
-                } catch(e) {}
+                const dateStr    = getDateString(item.dateAdded);
 
                 return `
                   <div class="item ${ageClass}" data-id="${item.id}">
@@ -417,11 +722,9 @@
                       ${item.description ? '<br><small>' + item.description + '</small>' : ''}
                     </div>
 
-                    <!-- Age badge + date display / edit controls -->
                     <span class="age-badge">${ageLabel}</span>
 
                     <div class="item-date-area">
-                      <!-- Display mode -->
                       <span class="item-date-display" id="dateDisplay_${item.id}">${dateStr}</span>
                       <button
                         class="edit-date-btn"
@@ -429,7 +732,6 @@
                         data-id="${item.id}"
                         title="Edit date in freezer">✏</button>
 
-                      <!-- Edit mode (hidden by default) -->
                       <input
                         type="date"
                         class="date-edit-input"
@@ -445,6 +747,18 @@
                         id="cancelDateBtn_${item.id}"
                         data-id="${item.id}"
                         title="Cancel">✗</button>
+                    </div>
+
+                    <div class="item-controls">
+                      <button class="move-btn" id="moveBtn_${item.id}" data-id="${item.id}" title="Move to another drawer">Move</button>
+                      <select class="move-drawer-select" id="moveSelect_${item.id}" data-id="${item.id}">
+                        <option value="">Select drawer...</option>
+                        <option value="drawer1">Drawer 1</option>
+                        <option value="drawer2">Drawer 2</option>
+                        <option value="drawer3">Drawer 3</option>
+                      </select>
+                      <button class="move-btn" id="confirmMoveBtn_${item.id}" data-id="${item.id}" style="display:none; background: #28a745;" title="Confirm move">Move</button>
+                      <button class="move-btn cancel" id="cancelMoveBtn_${item.id}" data-id="${item.id}" style="display:none;" title="Cancel move">Cancel</button>
                     </div>
 
                     <button class="delete-btn" data-id="${item.id}">Delete</button>
@@ -505,7 +819,25 @@
     }
 
     // -------------------------------------------------------
-    // Event delegation for Add, Delete, and Date Edit buttons
+    // Toggle move drawer mode
+    // -------------------------------------------------------
+    function enterMoveMode(itemId) {
+      document.getElementById('moveBtn_' + itemId).style.display = 'none';
+      document.getElementById('moveSelect_' + itemId).classList.add('active');
+      document.getElementById('confirmMoveBtn_' + itemId).style.display = 'block';
+      document.getElementById('cancelMoveBtn_' + itemId).style.display = 'block';
+    }
+
+    function exitMoveMode(itemId) {
+      document.getElementById('moveBtn_' + itemId).style.display = 'block';
+      document.getElementById('moveSelect_' + itemId).classList.remove('active');
+      document.getElementById('moveSelect_' + itemId).value = '';
+      document.getElementById('confirmMoveBtn_' + itemId).style.display = 'none';
+      document.getElementById('cancelMoveBtn_' + itemId).style.display = 'none';
+    }
+
+    // -------------------------------------------------------
+    // Event delegation
     // -------------------------------------------------------
     document.addEventListener('click', async (e) => {
 
@@ -558,6 +890,39 @@
         exitEditMode(itemId);
       }
 
+      // MOVE ITEM: Enter move mode
+      if (e.target.id && e.target.id.startsWith('moveBtn_')) {
+        const itemId = e.target.dataset.id;
+        enterMoveMode(itemId);
+      }
+
+      // CONFIRM MOVE
+      if (e.target.id && e.target.id.startsWith('confirmMoveBtn_')) {
+        const itemId = e.target.dataset.id;
+        const newDrawer = document.getElementById('moveSelect_' + itemId).value;
+
+        if (!newDrawer) {
+          alert('Please select a drawer to move to.');
+          return;
+        }
+
+        try {
+          await db.collection('freezerInventory').doc(itemId).update({
+            drawer: newDrawer
+          });
+          exitMoveMode(itemId);
+        } catch (error) {
+          console.error("Error moving item:", error);
+          alert('Failed to move item. Please try again.');
+        }
+      }
+
+      // CANCEL MOVE
+      if (e.target.id && e.target.id.startsWith('cancelMoveBtn_')) {
+        const itemId = e.target.dataset.id;
+        exitMoveMode(itemId);
+      }
+
       // ADD ITEM
       if (e.target.classList.contains('add-btn')) {
         const freezerType = e.target.dataset.freezer;
@@ -600,7 +965,14 @@
         }
       }
     });
+
+    // Search input listener
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      performSearch(e.target.value);
+    });
+
+    // Initialize - subscribe to all items on page load
+    subscribeToAllItems();
   </script>
 </body>
 </html>
-
