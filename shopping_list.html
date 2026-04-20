@@ -474,67 +474,79 @@
       color: #0055a5;
     }
 
-    /* Mobile View Styles */
-    .mobile-item-card {
-      background: #f9f9f9;
-      border: 1px solid #eee;
-      padding: 10px 15px;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      display: flex; /* Changed to flexbox */
-      flex-wrap: wrap; /* Allow items to wrap */
-      justify-content: space-between; /* Distribute items */
-      align-items: center;
-      gap: 5px; /* Reduced gap */
-    }
-    .mobile-item-card.purchased {
-      background: #e6ffe6;
-      opacity: 0.7;
-    }
-    .mobile-item-name {
-      flex-basis: 100%; /* Make name take full width */
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #333;
-      margin-bottom: 5px; /* Add some space below the name */
-    }
-    .mobile-item-qty,
-    .mobile-item-price {
-      background: #0055a5;
-      color: white;
-      padding: 8px 10px; /* Reduced padding */
-      border-radius: 4px;
-      font-weight: bold;
-      text-align: center;
-      min-width: 40px; /* Adjusted min-width */
-      flex-shrink: 0; /* Prevent shrinking */
-    }
-    .mobile-item-price {
-      background: #28a745;
-      min-width: 60px; /* Adjusted min-width */
-    }
-    .mobile-purchased-button {
-      background: #0055a5;
-      color: white;
-      border: none;
-      padding: 10px 12px; /* Adjusted padding */
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.95rem; /* Slightly smaller font size */
-      cursor: pointer;
-      flex-grow: 1; /* Allow button to grow to fill space */
-      min-width: unset; /* Remove fixed min-width to allow flexing */
-      margin-left: auto; /* Push to the right */
-    }
-    .mobile-purchased-button:hover {
-      background: #003f7f;
-    }
-    .mobile-purchased-button.is-purchased {
-      background: #6c757d;
-    }
-    .mobile-purchased-button.is-purchased:hover {
-      background: #5a6268;
-    }
+/* Mobile View Styles - COMPACT */
+.mobile-item-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  display: block;
+}
+
+.mobile-item-card.purchased {
+  background: #e6ffe6;
+  opacity: 0.7;
+}
+
+.mobile-item-name {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #333;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.mobile-item-qty {
+  background: #0055a5;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.mobile-item-price {
+  background: #28a745;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  display: inline-block;
+  margin-left: 6px;
+  float: right;
+}
+
+.mobile-purchased-button {
+  background: #0055a5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+  clear: both;
+  display: block;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+
+.mobile-purchased-button:hover {
+  background: #003f7f;
+}
+
+.mobile-purchased-button.is-purchased {
+  background: #6c757d;
+}
+
+.mobile-purchased-button.is-purchased:hover {
+  background: #5a6268;
+}
 
     @media (max-width: 768px) {
       .tab-button.mobile-only {
@@ -1141,73 +1153,76 @@
       calculateCosts();
     };
 
-    // Function to render mobile view
-    const renderMobileView = (items) => {
-      mobileItemsContainer.innerHTML = '';
+// Function to render mobile view
+const renderMobileView = (items) => {
+  mobileItemsContainer.innerHTML = '';
 
-      if (items.length === 0) {
-        mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
-        return;
-      }
+  if (items.length === 0) {
+    mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
+    return;
+  }
 
-      const positionOrder = {
-        "Start": 1,
-        "Middle": 2,
-        "End": 3
-      };
+  const positionOrder = {
+    "Start": 1,
+    "Middle": 2,
+    "End": 3
+  };
 
-      items.sort((a, b) => {
-        const templateA = getTemplateForItem(a.name);
-        const templateB = getTemplateForItem(b.name);
+  items.sort((a, b) => {
+    const templateA = getTemplateForItem(a.name);
+    const templateB = getTemplateForItem(b.name);
 
-        if (!templateA || !templateB) return 0;
+    if (!templateA || !templateB) return 0;
 
-        if (a.purchased !== b.purchased) {
-            return a.purchased - b.purchased;
-        }
-        if (templateA.isle !== templateB.isle) {
-          return templateA.isle - templateB.isle;
-        }
-        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
-          return positionOrder[templateA.position] - positionOrder[templateB.position];
-        }
-        const pickOrderA = templateA.pickOrder || 1;
-        const pickOrderB = templateB.pickOrder || 1;
-        if (pickOrderA !== pickOrderB) {
-          return pickOrderA - pickOrderB;
-        }
-        if (templateA.side !== templateB.side) {
-            return templateA.side.localeCompare(templateB.side);
-        }
-        return 0;
-      });
+    if (a.purchased !== b.purchased) {
+        return a.purchased - b.purchased;
+    }
+    if (templateA.isle !== templateB.isle) {
+      return templateA.isle - templateB.isle;
+    }
+    if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+      return positionOrder[templateA.position] - positionOrder[templateB.position];
+    }
+    const pickOrderA = templateA.pickOrder || 1;
+    const pickOrderB = templateB.pickOrder || 1;
+    if (pickOrderA !== pickOrderB) {
+      return pickOrderA - pickOrderB;
+    }
+    if (templateA.side !== templateB.side) {
+        return templateA.side.localeCompare(templateB.side);
+    }
+    return 0;
+  });
 
-      items.forEach(item => {
-        const template = getTemplateForItem(item.name);
-        
-        if (!template) {
-          return;
-        }
+  items.forEach(item => {
+    const template = getTemplateForItem(item.name);
+    
+    if (!template) {
+      return;
+    }
 
-        const price = template.price || 0;
-        const itemTotal = (price * item.qty).toFixed(2);
+    const price = template.price || 0;
+    const itemTotal = (price * item.qty).toFixed(2);
 
-        const mobileCard = document.createElement('div');
-        mobileCard.classList.add('mobile-item-card');
-        if (item.purchased) {
-            mobileCard.classList.add('purchased');
-        }
-        mobileCard.innerHTML = `
-          <div class="mobile-item-name">${item.name}</div>
-          <div class="mobile-item-qty">${item.qty}x</div>
-          <div class="mobile-item-price">£${itemTotal}</div>
-          <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
-            ${item.purchased ? 'Done' : 'Got It'}
-          </button>
-        `;
-        mobileItemsContainer.appendChild(mobileCard);
-      });
-    };
+    const mobileCard = document.createElement('div');
+    mobileCard.classList.add('mobile-item-card');
+    if (item.purchased) {
+        mobileCard.classList.add('purchased');
+    }
+    mobileCard.innerHTML = `
+      <div>
+        <div class="mobile-item-name">${item.name}</div>
+        <div class="mobile-item-qty">${item.qty}x</div>
+        <div class="mobile-item-price">£${itemTotal}</div>
+      </div>
+      <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
+        ${item.purchased ? 'Done' : 'Got It'}
+      </button>
+    `;
+    mobileItemsContainer.appendChild(mobileCard);
+  });
+};
+
 
     // Function to render templates
     const renderTemplates = () => {
