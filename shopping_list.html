@@ -78,6 +78,7 @@
       font-weight: bold;
     }
     form input[type="text"],
+    form input[type="number"],
     form select {
       width: calc(100% - 22px);
       padding: 10px;
@@ -204,21 +205,26 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 15px;
     }
     .item-card.purchased {
         background: #e6ffe6;
         text-decoration: line-through;
         color: #666;
     }
+    .item-info {
+      flex: 1;
+    }
     .item-card button {
         width: auto;
         padding: 5px 10px;
-        margin-left: 10px;
+        margin-left: 5px;
         font-size: 0.8rem;
     }
     .item-card .actions {
         display: flex;
         gap: 5px;
+        flex-wrap: wrap;
     }
     .item-card .delete-button {
         background-color: #dc3545;
@@ -244,6 +250,33 @@
       font-size: 0.9em;
       font-style: italic;
       margin-top: 4px;
+    }
+    .item-qty {
+      background: #0055a5;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      min-width: 50px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .qty-controls {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .qty-controls button {
+      width: auto;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      margin-left: 0;
+      background-color: #0055a5;
+    }
+    .qty-controls button:hover {
+      background-color: #003f7f;
     }
     .no-items {
         text-align: center;
@@ -373,6 +406,10 @@
         width: 100%;
         margin-top: 10px;
       }
+      .qty-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -400,6 +437,9 @@
 
         <label for="itemDescription">Description (optional):</label>
         <input type="text" id="itemDescription" placeholder="e.g., For curry, boneless" />
+
+        <label for="itemQty">Quantity:</label>
+        <input type="number" id="itemQty" placeholder="e.g., 2" min="1" value="1" required />
 
         <label for="itemIsle">Isle:</label>
         <input type="text" id="itemIsle" placeholder="e.g., 1" required />
@@ -464,13 +504,16 @@
   <div id="editModal" class="modal">
     <div class="modal-content">
       <span class="modal-close">&times;</span>
-      <div class="modal-header">Edit Item Location</div>
+      <div class="modal-header">Edit Item</div>
       <form id="editForm">
         <label for="editItemName">Item Name:</label>
         <input type="text" id="editItemName" disabled />
 
         <label for="editItemDescription">Description (optional):</label>
         <input type="text" id="editItemDescription" />
+
+        <label for="editItemQty">Quantity:</label>
+        <input type="number" id="editItemQty" min="1" required />
 
         <label for="editItemIsle">Isle:</label>
         <input type="text" id="editItemIsle" required />
@@ -562,6 +605,7 @@
     const addItemForm = document.getElementById('addItemForm');
     const itemNameInput = document.getElementById('itemName');
     const itemDescriptionInput = document.getElementById('itemDescription');
+    const itemQtyInput = document.getElementById('itemQty');
     const itemIsleInput = document.getElementById('itemIsle');
     const itemPositionSelect = document.getElementById('itemPosition');
     const itemSideSelect = document.getElementById('itemSide');
@@ -609,6 +653,7 @@
           itemPositionSelect.value = template.position;
           itemSideSelect.value = template.side;
           itemDescriptionInput.value = '';
+          itemQtyInput.value = 1;
           autocompleteSuggestions.innerHTML = '';
           itemNameInput.focus();
         });
@@ -629,11 +674,12 @@
 
       const itemName = itemNameInput.value.trim();
       const itemDescription = itemDescriptionInput.value.trim();
+      const itemQty = parseInt(itemQtyInput.value);
       const itemIsle = parseInt(itemIsleInput.value);
       const itemPosition = itemPositionSelect.value;
       const itemSide = itemSideSelect.value;
 
-      if (!itemName || isNaN(itemIsle) || !itemPosition || !itemSide) {
+      if (!itemName || isNaN(itemQty) || itemQty < 1 || isNaN(itemIsle) || !itemPosition || !itemSide) {
         alert('Please fill in all required fields correctly.');
         return;
       }
@@ -642,6 +688,7 @@
         await db.collection('shoppingList').add({
           name: itemName,
           description: itemDescription,
+          qty: itemQty,
           isle: itemIsle,
           position: itemPosition,
           side: itemSide,
@@ -660,6 +707,7 @@
         }
 
         addItemForm.reset();
+        itemQtyInput.value = 1;
         itemNameInput.focus();
       } catch (error) {
         console.error("Error adding document: ", error);
@@ -705,11 +753,15 @@
             itemCard.classList.add('purchased');
         }
         itemCard.innerHTML = `
-          <div>
+          <div class="item-info">
             <strong>${item.name}</strong>
             ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
-            <br>
             <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
+          </div>
+          <div class="item-qty">${item.qty}x</div>
+          <div class="qty-controls">
+            <button class="qty-decrease-button" data-id="${item.id}" type="button">-</button>
+            <button class="qty-increase-button" data-id="${item.id}" type="button">+</button>
           </div>
           <div class="actions">
             <button class="purchased-button" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
@@ -767,7 +819,7 @@
         console.error("Error fetching shopping list: ", error);
       });
 
-    // Floor Plan Drawing Function (UPDATED WITH NEW AISLE LAYOUT)
+    // Floor Plan Drawing Function
     function drawFloorPlan() {
       const canvas = floorPlanCanvas;
       const ctx = canvas.getContext('2d');
@@ -1020,7 +1072,7 @@
         routeItem.innerHTML = `
           <div class="route-number">${index + 1}</div>
           <div class="route-details">
-            <strong>${item.name}</strong>
+            <strong>${item.name} (x${item.qty})</strong>
             ${item.description ? `<span class="route-description">${item.description}</span>` : ''}
             <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
           </div>
@@ -1083,6 +1135,24 @@
       }
     }
 
+    // Update quantity
+    async function updateQuantity(itemId, increment) {
+      const item = allShoppingItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      let newQty = item.qty + (increment ? 1 : -1);
+      if (newQty < 1) newQty = 1;
+
+      try {
+        await db.collection('shoppingList').doc(itemId).update({
+          qty: newQty
+        });
+      } catch (error) {
+        console.error("Error updating quantity: ", error);
+        alert("Failed to update quantity. Please try again.");
+      }
+    }
+
     // Event delegation for shopping list actions
     itemsContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-button')) {
@@ -1117,6 +1187,7 @@
                 const data = doc.data();
                 document.getElementById('editItemName').value = data.name;
                 document.getElementById('editItemDescription').value = data.description || '';
+                document.getElementById('editItemQty').value = data.qty || 1;
                 document.getElementById('editItemIsle').value = data.isle;
                 document.getElementById('editItemPosition').value = data.position;
                 document.getElementById('editItemSide').value = data.side;
@@ -1125,6 +1196,12 @@
             } catch (error) {
               console.error("Error fetching item: ", error);
             }
+        } else if (e.target.classList.contains('qty-increase-button')) {
+            const itemId = e.target.dataset.id;
+            updateQuantity(itemId, true);
+        } else if (e.target.classList.contains('qty-decrease-button')) {
+            const itemId = e.target.dataset.id;
+            updateQuantity(itemId, false);
         }
     });
 
@@ -1149,6 +1226,7 @@
               editingItemIsTemplate = true;
               document.getElementById('editItemName').value = template.name;
               document.getElementById('editItemDescription').value = '';
+              document.getElementById('editItemQty').value = 1;
               document.getElementById('editItemIsle').value = template.isle;
               document.getElementById('editItemPosition').value = template.position;
               document.getElementById('editItemSide').value = template.side;
@@ -1165,8 +1243,9 @@
       const editPosition = document.getElementById('editItemPosition').value;
       const editSide = document.getElementById('editItemSide').value;
       const editDescription = document.getElementById('editItemDescription').value.trim();
+      const editQty = parseInt(document.getElementById('editItemQty').value);
 
-      if (isNaN(editIsle) || !editPosition || !editSide) {
+      if (isNaN(editIsle) || !editPosition || !editSide || isNaN(editQty) || editQty < 1) {
         alert('Please fill in all required fields correctly.');
         return;
       }
@@ -1183,7 +1262,8 @@
             isle: editIsle,
             position: editPosition,
             side: editSide,
-            description: editDescription
+            description: editDescription,
+            qty: editQty
           });
         }
 
