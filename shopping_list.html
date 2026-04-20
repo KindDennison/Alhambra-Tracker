@@ -481,7 +481,9 @@
   padding: 8px 12px;
   margin-bottom: 8px;
   border-radius: 4px;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .mobile-item-card.purchased {
@@ -489,35 +491,47 @@
   opacity: 0.7;
 }
 
+.mobile-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
 .mobile-item-name {
   font-weight: bold;
   font-size: 0.95rem;
   color: #333;
-  display: inline-block;
-  margin-bottom: 6px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-item-qty {
   background: #0055a5;
   color: white;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 3px;
   font-weight: bold;
   font-size: 0.75rem;
-  display: inline-block;
-  margin-left: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .mobile-item-price {
   background: #28a745;
   color: white;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 3px;
   font-weight: bold;
   font-size: 0.75rem;
-  display: inline-block;
-  margin-left: 6px;
-  float: right;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .mobile-purchased-button {
@@ -530,10 +544,8 @@
   font-size: 0.9rem;
   cursor: pointer;
   width: 100%;
-  clear: both;
   display: block;
   box-sizing: border-box;
-  margin-top: 4px;
 }
 
 .mobile-purchased-button:hover {
@@ -584,24 +596,8 @@
       }
     }
 
-    @media (max-width: 480px) { /* More specific breakpoint for very small phones */
-      .mobile-item-card {
-        flex-direction: column; /* Stack all items vertically on very small screens */
-        align-items: flex-start;
-      }
-      .mobile-item-name {
-        margin-bottom: 10px;
-      }
-      .mobile-item-qty,
-      .mobile-item-price,
-      .mobile-purchased-button {
-        width: 100%; /* Make them full width */
-        margin-bottom: 5px; /* Add space between stacked items */
-        text-align: center;
-      }
-      .mobile-purchased-button {
-        margin-left: 0; /* Remove auto margin */
-      }
+    @media (max-width: 480px) {
+      /* Flexbox layout handles small screens natively now */
     }
   </style>
 </head>
@@ -1210,13 +1206,13 @@ const renderMobileView = (items) => {
         mobileCard.classList.add('purchased');
     }
     mobileCard.innerHTML = `
-      <div>
-        <div class="mobile-item-name">${item.name}</div>
-        <div class="mobile-item-qty">${item.qty}x</div>
-        <div class="mobile-item-price">£${itemTotal}</div>
+      <div class="mobile-item-header">
+        <span class="mobile-item-name">${item.name}</span>
+        <span class="mobile-item-qty">${item.qty}x</span>
+        <span class="mobile-item-price">£${itemTotal}</span>
       </div>
       <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
-        ${item.purchased ? 'Done' : 'Got It'}
+        ${item.purchased ? 'Undo' : 'Got It'}
       </button>
     `;
     mobileItemsContainer.appendChild(mobileCard);
