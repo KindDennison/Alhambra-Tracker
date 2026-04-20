@@ -102,17 +102,20 @@
     .action-buttons {
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #eee;
     }
     .action-buttons button {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       background: #28a745;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.9rem;
+      font-weight: bold;
     }
     .action-buttons button:hover {
       background: #218838;
@@ -532,11 +535,6 @@
         <button type="submit">Add Item</button>
       </form>
 
-      <div class="action-buttons">
-        <button onclick="clearAllPurchased()">Clear Purchased Items</button>
-        <button onclick="markAllPurchased()">Mark All as Purchased</button>
-      </div>
-
       <div id="shoppingListDisplay">
         <h2>Your List</h2>
         <div id="itemsContainer">
@@ -558,6 +556,11 @@
           <span>Estimated Total:</span>
           <strong id="totalCost">£0.00</strong>
         </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="danger" onclick="clearAllPurchased()">Clear Purchased Items</button>
+        <button onclick="markAllPurchased()">Mark All as Purchased</button>
       </div>
     </div>
 
@@ -609,9 +612,16 @@
                 <option value="End">End</option>
               </select>
             </div>
+          </div>
+
+          <div class="form-row">
             <div>
               <label for="templatePrice">Price (per unit):</label>
               <input type="number" id="templatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+            </div>
+            <div>
+              <label for="templatePickOrder">Pick Order (optional):</label>
+              <input type="number" id="templatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." />
             </div>
           </div>
 
@@ -679,6 +689,9 @@
 
         <label for="editTemplatePrice">Price (per unit):</label>
         <input type="number" id="editTemplatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+
+        <label for="editTemplatePickOrder">Pick Order (optional):</label>
+        <input type="number" id="editTemplatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." />
 
         <div class="modal-buttons">
           <button type="button" class="cancel-button" id="cancelEditTemplateButton">Cancel</button>
@@ -850,6 +863,7 @@
           isle: template.isle,
           position: template.position,
           side: template.side,
+          pickOrder: template.pickOrder || 999,
           purchased: false,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -872,6 +886,7 @@
       const templatePosition = document.getElementById('templatePosition').value;
       const templateSide = document.getElementById('templateSide').value;
       const templatePrice = parseFloat(document.getElementById('templatePrice').value) || 0;
+      const templatePickOrder = parseInt(document.getElementById('templatePickOrder').value) || 999;
 
       if (!templateName || isNaN(templateIsle) || !templatePosition || !templateSide) {
         alert('Please fill in all required fields correctly.');
@@ -890,7 +905,8 @@
           isle: templateIsle,
           position: templatePosition,
           side: templateSide,
-          price: templatePrice
+          price: templatePrice,
+          pickOrder: templatePickOrder
         });
 
         addTemplateForm.reset();
@@ -961,6 +977,11 @@
         if (a.side !== b.side) {
             return a.side.localeCompare(b.side);
         }
+        const pickOrderA = a.pickOrder || 999;
+        const pickOrderB = b.pickOrder || 999;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
+        }
         return 0;
       });
 
@@ -1014,9 +1035,10 @@
       allTemplates.forEach(template => {
         const templateCard = document.createElement('div');
         templateCard.classList.add('template-card');
+        const pickOrderText = template.pickOrder && template.pickOrder !== 999 ? ` (Pick Order: ${template.pickOrder})` : '';
         templateCard.innerHTML = `
           <div class="info">
-            <strong>${template.name}</strong> <br>
+            <strong>${template.name}${pickOrderText}</strong> <br>
             Isle ${template.isle}, ${template.position}, ${template.side} <br>
             <small>Price: £${(template.price || 0).toFixed(2)} per unit</small>
           </div>
@@ -1176,7 +1198,10 @@
       unpurchasedItems.sort((a, b) => {
           if (a.isle !== b.isle) return a.isle - b.isle;
           if (positionOrder[a.position] !== positionOrder[b.position]) return positionOrder[a.position] - positionOrder[b.position];
-          return a.side.localeCompare(b.side);
+          if (a.side !== b.side) return a.side.localeCompare(b.side);
+          const pickOrderA = a.pickOrder || 999;
+          const pickOrderB = b.pickOrder || 999;
+          return pickOrderA - pickOrderB;
       });
 
       // Plot items on the map
@@ -1288,6 +1313,11 @@
         }
         if (a.side !== b.side) {
             return a.side.localeCompare(b.side);
+        }
+        const pickOrderA = a.pickOrder || 999;
+        const pickOrderB = b.pickOrder || 999;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
         }
         return 0;
       });
@@ -1455,6 +1485,7 @@
               document.getElementById('editTemplatePosition').value = template.position;
               document.getElementById('editTemplateSide').value = template.side;
               document.getElementById('editTemplatePrice').value = template.price || 0;
+              document.getElementById('editTemplatePickOrder').value = template.pickOrder || '';
               editTemplateModal.classList.add('show');
             }
         }
@@ -1494,6 +1525,7 @@
       const editTemplatePosition = document.getElementById('editTemplatePosition').value;
       const editTemplateSide = document.getElementById('editTemplateSide').value;
       const editTemplatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
+      const editTemplatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value) || 999;
 
       if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide) {
         alert('Please fill in all required fields correctly.');
@@ -1505,7 +1537,8 @@
           isle: editTemplateIsle,
           position: editTemplatePosition,
           side: editTemplateSide,
-          price: editTemplatePrice
+          price: editTemplatePrice,
+          pickOrder: editTemplatePickOrder
         });
 
         editTemplateModal.classList.remove('show');
