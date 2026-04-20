@@ -53,6 +53,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
     .search-result-item.age-green {
       border-left-color: #28a745;
@@ -62,6 +64,9 @@
     }
     .search-result-item.age-red {
       border-left-color: #dc3545;
+    }
+    .search-result-item.age-black {
+      border-left-color: #212529;
     }
     .search-result-text {
       flex-grow: 1;
@@ -101,6 +106,10 @@
       background: #f8d7da;
       color: #721c24;
     }
+    .search-result-age.age-black {
+      background: #e2e3e5;
+      color: #212529;
+    }
     .no-results {
       color: #999;
       font-style: italic;
@@ -137,6 +146,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .red-item-entry.age-black {
+      border-left-color: #212529;
     }
     .red-item-text {
       flex-grow: 1;
@@ -144,6 +158,9 @@
     .red-item-name {
       font-weight: bold;
       color: #721c24;
+    }
+    .red-item-name.age-black {
+      color: #212529;
     }
     .red-item-location {
       font-size: 0.85rem;
@@ -158,6 +175,10 @@
       font-weight: bold;
       font-size: 0.85rem;
       white-space: nowrap;
+    }
+    .red-item-badge.age-black {
+      background: #e2e3e5;
+      color: #212529;
     }
     .no-red-items {
       color: #28a745;
@@ -227,6 +248,16 @@
       color: #dc3545;
     }
 
+    .item.age-black {
+      border-left-color: #212529;
+    }
+    .item.age-black .item-name {
+      color: #212529;
+    }
+    .item.age-black .item-date-display {
+      color: #212529;
+    }
+
     .item-text { flex-grow: 1; min-width: 150px; }
 
     /* ── Date area ── */
@@ -287,6 +318,7 @@
     .age-green  .age-badge { background: #d4edda; color: #155724; }
     .age-amber  .age-badge { background: #ffe5d0; color: #7d3c00; }
     .age-red    .age-badge { background: #f8d7da; color: #721c24; }
+    .age-black  .age-badge { background: #e2e3e5; color: #212529; }
 
     /* ── Move drawer controls ── */
     .item-controls {
@@ -399,7 +431,7 @@
 
       <!-- Red Items Alert Section -->
       <div class="red-items-section" id="redItemsSection">
-        <h2>Items Needing Attention (4.5+ months)</h2>
+        <h2>Items Needing Attention (5+ months)</h2>
         <div id="redItemsList">
           <div class="no-red-items">All clear! No items need throwing out.</div>
         </div>
@@ -435,11 +467,15 @@
         </div>
         <div class="colour-key-item">
           <div class="colour-key-dot" style="background:#fd7e14;"></div>
-          <span>3-4.5 months</span>
+          <span>3-5 months</span>
         </div>
         <div class="colour-key-item">
           <div class="colour-key-dot" style="background:#dc3545;"></div>
-          <span>4.5+ months (throw out soon!)</span>
+          <span>5-6 months</span>
+        </div>
+        <div class="colour-key-item">
+          <div class="colour-key-dot" style="background:#212529;"></div>
+          <span>Over 6 months (throw out!)</span>
         </div>
       </div>
 
@@ -486,7 +522,8 @@
 
     function getAgeClass(dateAdded) {
       const days = getDaysOld(dateAdded);
-      if (days >= 135) return 'age-red';
+      if (days >= 180) return 'age-black';
+      if (days >= 150) return 'age-red';
       if (days >= 90)  return 'age-amber';
       return 'age-green';
     }
@@ -529,7 +566,7 @@
     function updateRedItemsSection() {
       const redItems = allItems.filter(item => {
         const ageClass = getAgeClass(item.dateAdded);
-        return ageClass === 'age-red';
+        return ageClass === 'age-red' || ageClass === 'age-black';
       });
 
       const redItemsList = document.getElementById('redItemsList');
@@ -541,16 +578,17 @@
           const freezerName = item.freezer === 'house' ? 'House Freezer' : 'Shed Freezer';
           const drawerNum = item.drawer.replace('drawer', '');
           const ageLabel = getAgeLabel(item.dateAdded);
+          const ageClass = getAgeClass(item.dateAdded);
 
           return `
-            <div class="red-item-entry">
+            <div class="red-item-entry ${ageClass}">
               <div class="red-item-text">
-                <div class="red-item-name">${item.name}</div>
+                <div class="red-item-name ${ageClass}">${item.name}</div>
                 <div class="red-item-location">
                   ${freezerName} - Drawer ${drawerNum} (${item.description ? item.description : 'No description'})
                 </div>
               </div>
-              <span class="red-item-badge">${ageLabel}</span>
+              <span class="red-item-badge ${ageClass}">${ageLabel}</span>
             </div>
           `;
         }).join('');
