@@ -964,26 +964,26 @@
         "End": 3
       };
 
-      items.sort((a, b) => {
-        if (a.purchased !== b.purchased) {
-            return a.purchased - b.purchased;
-        }
-        if (a.isle !== b.isle) {
-          return a.isle - b.isle;
-        }
-        if (positionOrder[a.position] !== positionOrder[b.position]) {
-          return positionOrder[a.position] - positionOrder[b.position];
-        }
-        if (a.side !== b.side) {
-            return a.side.localeCompare(b.side);
-        }
-        const pickOrderA = a.pickOrder || 999;
-        const pickOrderB = b.pickOrder || 999;
-        if (pickOrderA !== pickOrderB) {
-          return pickOrderA - pickOrderB;
-        }
-        return 0;
-      });
+     items.sort((a, b) => {
+  if (a.purchased !== b.purchased) {
+      return a.purchased - b.purchased;
+  }
+  if (a.isle !== b.isle) {
+    return a.isle - b.isle;
+  }
+  if (positionOrder[a.position] !== positionOrder[b.position]) {
+    return positionOrder[a.position] - positionOrder[b.position];
+  }
+  const pickOrderA = a.pickOrder || 999;
+  const pickOrderB = b.pickOrder || 999;
+  if (pickOrderA !== pickOrderB) {
+    return pickOrderA - pickOrderB;
+  }
+  if (a.side !== b.side) {
+      return a.side.localeCompare(b.side);
+  }
+  return 0;
+});
 
       items.forEach(item => {
         const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
@@ -1311,13 +1311,14 @@
         if (positionOrder[a.position] !== positionOrder[b.position]) {
           return positionOrder[a.position] - positionOrder[b.position];
         }
-        if (a.side !== b.side) {
-            return a.side.localeCompare(b.side);
-        }
+
         const pickOrderA = a.pickOrder || 999;
         const pickOrderB = b.pickOrder || 999;
         if (pickOrderA !== pickOrderB) {
           return pickOrderA - pickOrderB;
+        }
+        if (a.side !== b.side) {
+          return a.side.localeCompare(b.side);
         }
         return 0;
       });
