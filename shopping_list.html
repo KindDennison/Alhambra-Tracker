@@ -515,10 +515,6 @@
 
     <!-- Shopping List Tab -->
     <div class="tab-content active" id="shopping-tab">
-      <div class="info-box">
-        <strong>Pro Tip:</strong> Set up your item templates first on the "Item Templates" tab so locations and prices are saved. Then just add items here and they'll auto-populate!
-      </div>
-
       <form id="addItemForm">
         <label for="itemName">Item Name:</label>
         <div class="form-group">
@@ -620,8 +616,8 @@
               <input type="number" id="templatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
             </div>
             <div>
-              <label for="templatePickOrder">Pick Order (optional):</label>
-              <input type="number" id="templatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." />
+              <label for="templatePickOrder">Pick Order:</label>
+              <input type="number" id="templatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." required />
             </div>
           </div>
 
@@ -690,8 +686,8 @@
         <label for="editTemplatePrice">Price (per unit):</label>
         <input type="number" id="editTemplatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
 
-        <label for="editTemplatePickOrder">Pick Order (optional):</label>
-        <input type="number" id="editTemplatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." />
+        <label for="editTemplatePickOrder">Pick Order:</label>
+        <input type="number" id="editTemplatePickOrder" min="1" required />
 
         <div class="modal-buttons">
           <button type="button" class="cancel-button" id="cancelEditTemplateButton">Cancel</button>
@@ -794,6 +790,12 @@
         allTemplates.push({ id: doc.id, ...doc.data() });
       });
       renderTemplates();
+      // Re-render shopping list when templates change to get live updates
+      renderShoppingList(allShoppingItems);
+      renderRouteGuide(allShoppingItems);
+      if (document.getElementById('route-tab').classList.contains('active')) {
+        drawFloorPlan();
+      }
     });
 
     // Autocomplete functionality
@@ -860,10 +862,6 @@
           name: itemName,
           description: itemDescription,
           qty: itemQty,
-          isle: template.isle,
-          position: template.position,
-          side: template.side,
-          pickOrder: template.pickOrder || 999,
           purchased: false,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -886,9 +884,9 @@
       const templatePosition = document.getElementById('templatePosition').value;
       const templateSide = document.getElementById('templateSide').value;
       const templatePrice = parseFloat(document.getElementById('templatePrice').value) || 0;
-      const templatePickOrder = parseInt(document.getElementById('templatePickOrder').value) || 999;
+      const templatePickOrder = parseInt(document.getElementById('templatePickOrder').value);
 
-      if (!templateName || isNaN(templateIsle) || !templatePosition || !templateSide) {
+      if (!templateName || isNaN(templateIsle) || !templatePosition || !templateSide || isNaN(templatePickOrder)) {
         alert('Please fill in all required fields correctly.');
         return;
       }
@@ -918,13 +916,18 @@
       }
     });
 
+    // Helper function to get template data for a shopping item
+    function getTemplateForItem(itemName) {
+      return allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
+    }
+
     // Calculate costs
     function calculateCosts() {
       let unpurchasedTotal = 0;
       let purchasedTotal = 0;
 
       allShoppingItems.forEach(item => {
-        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
+        const template = getTemplateForItem(item.name);
         const price = template ? (template.price || 0) : 0;
         const itemTotal = price * item.qty;
 
@@ -964,30 +967,41 @@
         "End": 3
       };
 
-     items.sort((a, b) => {
-  if (a.purchased !== b.purchased) {
-      return a.purchased - b.purchased;
-  }
-  if (a.isle !== b.isle) {
-    return a.isle - b.isle;
-  }
-  if (positionOrder[a.position] !== positionOrder[b.position]) {
-    return positionOrder[a.position] - positionOrder[b.position];
-  }
-  const pickOrderA = a.pickOrder || 999;
-  const pickOrderB = b.pickOrder || 999;
-  if (pickOrderA !== pickOrderB) {
-    return pickOrderA - pickOrderB;
-  }
-  if (a.side !== b.side) {
-      return a.side.localeCompare(b.side);
-  }
-  return 0;
-});
+      items.sort((a, b) => {
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
+
+        if (!templateA || !templateB) return 0;
+
+        if (a.purchased !== b.purchased) {
+            return a.purchased - b.purchased;
+        }
+        if (templateA.isle !== templateB.isle) {
+          return templateA.isle - templateB.isle;
+        }
+        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+          return positionOrder[templateA.position] - positionOrder[templateB.position];
+        }
+        const pickOrderA = templateA.pickOrder || 1;
+        const pickOrderB = templateB.pickOrder || 1;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
+        }
+        if (templateA.side !== templateB.side) {
+            return templateA.side.localeCompare(templateB.side);
+        }
+        return 0;
+      });
 
       items.forEach(item => {
-        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
-        const price = template ? (template.price || 0) : 0;
+        const template = getTemplateForItem(item.name);
+        
+        if (!template) {
+          // Skip items without a template
+          return;
+        }
+
+        const price = template.price || 0;
         const itemTotal = (price * item.qty).toFixed(2);
 
         const itemCard = document.createElement('div');
@@ -999,7 +1013,7 @@
           <div class="item-info">
             <strong>${item.name}</strong>
             ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
-            <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
+            <small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>
           </div>
           <div class="item-qty">${item.qty}x</div>
           <div class="item-price">£${itemTotal}</div>
@@ -1035,11 +1049,10 @@
       allTemplates.forEach(template => {
         const templateCard = document.createElement('div');
         templateCard.classList.add('template-card');
-        const pickOrderText = template.pickOrder && template.pickOrder !== 999 ? ` (Pick Order: ${template.pickOrder})` : '';
         templateCard.innerHTML = `
           <div class="info">
-            <strong>${template.name}${pickOrderText}</strong> <br>
-            Isle ${template.isle}, ${template.position}, ${template.side} <br>
+            <strong>${template.name}</strong> <br>
+            Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1}) <br>
             <small>Price: £${(template.price || 0).toFixed(2)} per unit</small>
           </div>
           <div>
@@ -1119,17 +1132,23 @@
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(xStart, padding, individualAisleWidth, height);
 
-        // Draw aisle number circle at top, centered within the aisle block
-        ctx.fillStyle = '#0055a5';
-        ctx.beginPath();
-        ctx.arc(xCenter, padding - 15, 12, 0, Math.PI * 2);
-        ctx.fill();
+        // Draw aisle number as a distinct rectangle
+        const numMarkerWidth = 30;
+        const numMarkerHeight = 24;
+        const numMarkerX = xCenter - numMarkerWidth / 2;
+        const numMarkerY = padding - numMarkerHeight - 5;
 
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = '#a6d9f5';
+        ctx.strokeStyle = '#0055a5';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(numMarkerX, numMarkerY, numMarkerWidth, numMarkerHeight);
+        ctx.strokeRect(numMarkerX, numMarkerY, numMarkerWidth, numMarkerHeight);
+
+        ctx.fillStyle = '#0055a5';
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(aisleInfo.number, xCenter, padding - 15);
+        ctx.fillText(aisleInfo.number, xCenter, numMarkerY + numMarkerHeight / 2);
 
         // Draw direction arrow in center of aisle
         ctx.strokeStyle = '#0055a5';
@@ -1182,7 +1201,7 @@
       ctx.fillText('ENTRY', entryX, entryY + 12);
       
       // Get unpurchased items
-      const unpurchasedItems = allShoppingItems.filter(item => !item.purchased);
+      const unpurchasedItems = allShoppingItems.filter(item => !item.purchased && getTemplateForItem(item.name));
 
       if (unpurchasedItems.length === 0) {
         ctx.fillStyle = '#999';
@@ -1196,22 +1215,27 @@
       // Sort items for routing
       const positionOrder = { "Start": 1, "Middle": 2, "End": 3 };
       unpurchasedItems.sort((a, b) => {
-          if (a.isle !== b.isle) return a.isle - b.isle;
-          if (positionOrder[a.position] !== positionOrder[b.position]) return positionOrder[a.position] - positionOrder[b.position];
-          if (a.side !== b.side) return a.side.localeCompare(b.side);
-          const pickOrderA = a.pickOrder || 999;
-          const pickOrderB = b.pickOrder || 999;
-          return pickOrderA - pickOrderB;
+          const templateA = getTemplateForItem(a.name);
+          const templateB = getTemplateForItem(b.name);
+
+          if (templateA.isle !== templateB.isle) return templateA.isle - templateB.isle;
+          if (positionOrder[templateA.position] !== positionOrder[templateB.position]) return positionOrder[templateA.position] - positionOrder[templateB.position];
+          const pickOrderA = templateA.pickOrder || 1;
+          const pickOrderB = templateB.pickOrder || 1;
+          if (pickOrderA !== pickOrderB) return pickOrderA - pickOrderB;
+          if (templateA.side !== templateB.side) return templateA.side.localeCompare(templateB.side);
+          return 0;
       });
 
       // Plot items on the map
       const itemPositions = [];
       
       unpurchasedItems.forEach((item, index) => {
-        const aisleConfig = aisles.find(aisle => aisle.number === item.isle);
+        const template = getTemplateForItem(item.name);
+        const aisleConfig = aisles.find(aisle => aisle.number === template.isle);
         
         if (aisleConfig) {
-          const aisleIndex = aisles.findIndex(aisle => aisle.number === item.isle);
+          const aisleIndex = aisles.findIndex(aisle => aisle.number === template.isle);
           const xStart = aisleXStarts[aisleIndex];
           const xCenter = xStart + individualAisleWidth / 2;
           const direction = aisleConfig.direction;
@@ -1219,9 +1243,9 @@
           // Determine X position based on side
           let itemX;
           
-          let sideToUse = item.side;
-          if (direction === 'DOWN' && item.side !== 'End') {
-            sideToUse = item.side === 'Left' ? 'Right' : 'Left';
+          let sideToUse = template.side;
+          if (direction === 'DOWN' && template.side !== 'End') {
+            sideToUse = template.side === 'Left' ? 'Right' : 'Left';
           }
           
           if (sideToUse === 'Left') {
@@ -1234,9 +1258,9 @@
 
           // Determine Y position based on position in aisle and direction
           let itemY;
-          if (item.position === 'Start') {
+          if (template.position === 'Start') {
             itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
-          } else if (item.position === 'Middle') {
+          } else if (template.position === 'Middle') {
             itemY = padding + height / 2;
           } else {
             itemY = (direction === 'UP') ? (padding + 20) : (padding + height - 20);
@@ -1291,7 +1315,7 @@
       const routeGuideItems = document.getElementById('routeGuideItems');
       routeGuideItems.innerHTML = '';
 
-      const unpurchasedItems = items.filter(item => !item.purchased);
+      const unpurchasedItems = items.filter(item => !item.purchased && getTemplateForItem(item.name));
 
       if (unpurchasedItems.length === 0) {
         routeGuideItems.innerHTML = '<p class="no-items">No items in your list. Add items to see your route!</p>';
@@ -1305,26 +1329,28 @@
       };
 
       unpurchasedItems.sort((a, b) => {
-        if (a.isle !== b.isle) {
-          return a.isle - b.isle;
-        }
-        if (positionOrder[a.position] !== positionOrder[b.position]) {
-          return positionOrder[a.position] - positionOrder[b.position];
-        }
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
 
-        const pickOrderA = a.pickOrder || 999;
-        const pickOrderB = b.pickOrder || 999;
+        if (templateA.isle !== templateB.isle) {
+          return templateA.isle - templateB.isle;
+        }
+        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+          return positionOrder[templateA.position] - positionOrder[templateB.position];
+        }
+        const pickOrderA = templateA.pickOrder || 1;
+        const pickOrderB = templateB.pickOrder || 1;
         if (pickOrderA !== pickOrderB) {
           return pickOrderA - pickOrderB;
         }
-        if (a.side !== b.side) {
-          return a.side.localeCompare(b.side);
+        if (templateA.side !== templateB.side) {
+            return templateA.side.localeCompare(templateB.side);
         }
         return 0;
       });
 
       unpurchasedItems.forEach((item, index) => {
-        const template = allTemplates.find(t => t.name.toLowerCase() === item.name.toLowerCase());
+        const template = getTemplateForItem(item.name);
         const price = template ? (template.price || 0) : 0;
         const itemTotal = (price * item.qty).toFixed(2);
 
@@ -1335,7 +1361,7 @@
           <div class="route-details">
             <strong>${item.name} (x${item.qty}) - £${itemTotal}</strong>
             ${item.description ? `<span class="route-description">${item.description}</span>` : ''}
-            <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
+            <small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>
           </div>
         `;
         routeGuideItems.appendChild(routeItem);
@@ -1486,7 +1512,7 @@
               document.getElementById('editTemplatePosition').value = template.position;
               document.getElementById('editTemplateSide').value = template.side;
               document.getElementById('editTemplatePrice').value = template.price || 0;
-              document.getElementById('editTemplatePickOrder').value = template.pickOrder || '';
+              document.getElementById('editTemplatePickOrder').value = template.pickOrder || 1;
               editTemplateModal.classList.add('show');
             }
         }
@@ -1526,9 +1552,9 @@
       const editTemplatePosition = document.getElementById('editTemplatePosition').value;
       const editTemplateSide = document.getElementById('editTemplateSide').value;
       const editTemplatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
-      const editTemplatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value) || 999;
+      const editTemplatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value);
 
-      if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide) {
+      if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide || isNaN(editTemplatePickOrder)) {
         alert('Please fill in all required fields correctly.');
         return;
       }
