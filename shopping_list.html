@@ -534,6 +534,13 @@
   white-space: nowrap;
 }
 
+.mobile-item-description {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
 .mobile-purchased-button {
   background: #0055a5;
   color: white;
@@ -1211,6 +1218,7 @@ const renderMobileView = (items) => {
         <span class="mobile-item-qty">${item.qty}x</span>
         <span class="mobile-item-price">£${itemTotal}</span>
       </div>
+      ${item.description ? `<div class="mobile-item-description">${item.description}</div>` : ''}
       <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
         ${item.purchased ? 'Undo' : 'Got It'}
       </button>
