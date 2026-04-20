@@ -183,6 +183,13 @@
       color: #666;
       margin-top: 5px;
     }
+    .route-description {
+      display: block;
+      color: #999;
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 3px;
+    }
     #shoppingListDisplay {
       margin-top: 30px;
       border-top: 1px solid #eee;
@@ -231,6 +238,12 @@
     }
     .item-card .edit-button:hover {
         background-color: #e0a800;
+    }
+    .item-description {
+      color: #666;
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 4px;
     }
     .no-items {
         text-align: center;
@@ -291,6 +304,8 @@
       width: 90%;
       max-width: 500px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-height: 80vh;
+      overflow-y: auto;
     }
     .modal-header {
       font-size: 1.5rem;
@@ -383,6 +398,9 @@
           <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
         </div>
 
+        <label for="itemDescription">Description (optional):</label>
+        <input type="text" id="itemDescription" placeholder="e.g., For curry, boneless" />
+
         <label for="itemIsle">Isle:</label>
         <input type="text" id="itemIsle" placeholder="e.g., 1" required />
 
@@ -450,6 +468,9 @@
       <form id="editForm">
         <label for="editItemName">Item Name:</label>
         <input type="text" id="editItemName" disabled />
+
+        <label for="editItemDescription">Description (optional):</label>
+        <input type="text" id="editItemDescription" />
 
         <label for="editItemIsle">Isle:</label>
         <input type="text" id="editItemIsle" required />
@@ -521,6 +542,7 @@
     const modalClose = document.querySelector('.modal-close');
     const cancelEditButton = document.getElementById('cancelEditButton');
     let editingItemId = null;
+    let editingItemIsTemplate = false;
 
     modalClose.addEventListener('click', () => {
       editModal.classList.remove('show');
@@ -539,6 +561,7 @@
     // Elements
     const addItemForm = document.getElementById('addItemForm');
     const itemNameInput = document.getElementById('itemName');
+    const itemDescriptionInput = document.getElementById('itemDescription');
     const itemIsleInput = document.getElementById('itemIsle');
     const itemPositionSelect = document.getElementById('itemPosition');
     const itemSideSelect = document.getElementById('itemSide');
@@ -585,6 +608,7 @@
           itemIsleInput.value = template.isle;
           itemPositionSelect.value = template.position;
           itemSideSelect.value = template.side;
+          itemDescriptionInput.value = '';
           autocompleteSuggestions.innerHTML = '';
           itemNameInput.focus();
         });
@@ -604,18 +628,20 @@
       e.preventDefault();
 
       const itemName = itemNameInput.value.trim();
+      const itemDescription = itemDescriptionInput.value.trim();
       const itemIsle = parseInt(itemIsleInput.value);
       const itemPosition = itemPositionSelect.value;
       const itemSide = itemSideSelect.value;
 
       if (!itemName || isNaN(itemIsle) || !itemPosition || !itemSide) {
-        alert('Please fill in all fields correctly.');
+        alert('Please fill in all required fields correctly.');
         return;
       }
 
       try {
         await db.collection('shoppingList').add({
           name: itemName,
+          description: itemDescription,
           isle: itemIsle,
           position: itemPosition,
           side: itemSide,
@@ -680,8 +706,10 @@
         }
         itemCard.innerHTML = `
           <div>
-            <strong>${item.name}</strong> <br>
-            Isle ${item.isle}, ${item.position}, ${item.side}
+            <strong>${item.name}</strong>
+            ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
+            <br>
+            <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
           </div>
           <div class="actions">
             <button class="purchased-button" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
@@ -993,6 +1021,7 @@
           <div class="route-number">${index + 1}</div>
           <div class="route-details">
             <strong>${item.name}</strong>
+            ${item.description ? `<span class="route-description">${item.description}</span>` : ''}
             <small>Isle ${item.isle}, ${item.position}, ${item.side}</small>
           </div>
         `;
@@ -1080,12 +1109,14 @@
         } else if (e.target.classList.contains('edit-button') && e.target.closest('#itemsContainer')) {
             const itemId = e.target.dataset.id;
             editingItemId = itemId;
+            editingItemIsTemplate = false;
             
             try {
               const doc = await db.collection('shoppingList').doc(itemId).get();
               if (doc.exists) {
                 const data = doc.data();
                 document.getElementById('editItemName').value = data.name;
+                document.getElementById('editItemDescription').value = data.description || '';
                 document.getElementById('editItemIsle').value = data.isle;
                 document.getElementById('editItemPosition').value = data.position;
                 document.getElementById('editItemSide').value = data.side;
@@ -1115,7 +1146,9 @@
             
             if (template) {
               editingItemId = templateId;
+              editingItemIsTemplate = true;
               document.getElementById('editItemName').value = template.name;
+              document.getElementById('editItemDescription').value = '';
               document.getElementById('editItemIsle').value = template.isle;
               document.getElementById('editItemPosition').value = template.position;
               document.getElementById('editItemSide').value = template.side;
@@ -1131,16 +1164,15 @@
       const editIsle = parseInt(document.getElementById('editItemIsle').value);
       const editPosition = document.getElementById('editItemPosition').value;
       const editSide = document.getElementById('editItemSide').value;
+      const editDescription = document.getElementById('editItemDescription').value.trim();
 
       if (isNaN(editIsle) || !editPosition || !editSide) {
-        alert('Please fill in all fields correctly.');
+        alert('Please fill in all required fields correctly.');
         return;
       }
 
       try {
-        const itemTemplate = allTemplates.find(t => t.id === editingItemId);
-        
-        if (itemTemplate) {
+        if (editingItemIsTemplate) {
           await db.collection('itemTemplates').doc(editingItemId).update({
             isle: editIsle,
             position: editPosition,
@@ -1150,12 +1182,14 @@
           await db.collection('shoppingList').doc(editingItemId).update({
             isle: editIsle,
             position: editPosition,
-            side: editSide
+            side: editSide,
+            description: editDescription
           });
         }
 
         editModal.classList.remove('show');
         editingItemId = null;
+        editingItemIsTemplate = false;
       } catch (error) {
         console.error("Error updating document: ", error);
         alert("Failed to update item. Please try again.");
