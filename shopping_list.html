@@ -616,7 +616,7 @@
     </div>
 
     <div class="tabs">
-      <button class="tab-button desktop-only active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button active" data-tab="shopping">Shopping List</button>
       <button class="tab-button mobile-only" data-tab="mobile">Mobile View</button>
       <button class="tab-button" data-tab="route">Shop Route</button>
       <button class="tab-button" data-tab="templates">Item Templates</button>
@@ -676,7 +676,23 @@
         <p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>
       </div>
 
-      <div class="action-buttons" style="margin-top: 30px;">
+      <div class="cost-summary" id="mobileCostSummary" style="display: none;">
+        <h3>Cost Summary</h3>
+        <div class="cost-line">
+          <span>Unpurchased Items:</span>
+          <strong id="mobileUnpurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line">
+          <span>Purchased Items:</span>
+          <strong id="mobilePurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line cost-total">
+          <span>Estimated Total:</span>
+          <strong id="mobileTotalCost">£0.00</strong>
+        </div>
+      </div>
+
+      <div class="action-buttons" style="margin-top: 20px;">
         <button class="danger" onclick="clearAllPurchased()">Clear Purchased</button>
       </div>
     </div>
@@ -1066,10 +1082,17 @@
       document.getElementById('purchasedCost').textContent = '£' + purchasedTotal.toFixed(2);
       document.getElementById('totalCost').textContent = '£' + totalCost.toFixed(2);
 
+      document.getElementById('mobileUnpurchasedCost').textContent = '£' + unpurchasedTotal.toFixed(2);
+      document.getElementById('mobilePurchasedCost').textContent = '£' + purchasedTotal.toFixed(2);
+      document.getElementById('mobileTotalCost').textContent = '£' + totalCost.toFixed(2);
+
+      const mobileCostSummary = document.getElementById('mobileCostSummary');
       if (allShoppingItems.length > 0) {
         costSummary.style.display = 'block';
+        mobileCostSummary.style.display = 'block';
       } else {
         costSummary.style.display = 'none';
+        mobileCostSummary.style.display = 'none';
       }
     }
 
