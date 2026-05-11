@@ -43,6 +43,28 @@
     .back-button:hover {
       background: #5a6268;
     }
+    .store-selector {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f0f8ff;
+      border-radius: 4px;
+      border-left: 4px solid #0055a5;
+    }
+    .store-selector label {
+      font-weight: bold;
+      color: #0055a5;
+      margin-right: 10px;
+    }
+    .store-selector select {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .store-selector select:hover {
+      border-color: #0055a5;
+    }
     .tabs {
       display: flex;
       gap: 10px;
@@ -130,7 +152,6 @@
     .action-buttons button.danger:hover {
       background: #c82333;
     }
-    /* Floor Plan Styles */
     .floor-plan-container {
       margin: 20px 0;
       padding: 20px;
@@ -215,42 +236,67 @@
       gap: 15px;
     }
     .item-card.purchased {
-        background: #e6ffe6;
-        text-decoration: line-through;
-        color: #666;
+      background: #e6ffe6;
+      text-decoration: line-through;
+      color: #666;
+    }
+    .item-card.custom-item {
+      background: #fffbea;
+      border-left: 4px solid #ffc107;
+    }
+    .item-card.custom-item.purchased {
+      background: #e6ffe6;
+      border-left: 4px solid #ffc107;
+    }
+    .custom-badge {
+      background: #ffc107;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      margin-left: 8px;
+      white-space: nowrap;
     }
     .item-info {
       flex: 1;
     }
     .item-card button {
-        width: auto;
-        padding: 5px 10px;
-        margin-left: 5px;
-        font-size: 0.8rem;
+      width: auto;
+      padding: 5px 10px;
+      margin-left: 5px;
+      font-size: 0.8rem;
     }
     .item-card .actions {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
     }
     .item-card .delete-button {
-        background-color: #dc3545;
+      background-color: #dc3545;
     }
     .item-card .delete-button:hover {
-        background-color: #c82333;
+      background-color: #c82333;
     }
     .item-card .purchased-button {
-        background-color: #28a745;
+      background-color: #28a745;
     }
     .item-card .purchased-button:hover {
-        background-color: #218838;
+      background-color: #218838;
     }
     .item-card .edit-button {
-        background-color: #ffc107;
-        color: #000;
+      background-color: #ffc107;
+      color: #000;
     }
     .item-card .edit-button:hover {
-        background-color: #e0a800;
+      background-color: #e0a800;
+    }
+    .item-card .add-to-template-button {
+      background-color: #17a2b8;
+      color: white;
+    }
+    .item-card .add-to-template-button:hover {
+      background-color: #138496;
     }
     .item-description {
       color: #666;
@@ -327,9 +373,9 @@
       color: #0055a5;
     }
     .no-items {
-        text-align: center;
-        color: #666;
-        padding: 20px;
+      text-align: center;
+      color: #666;
+      padding: 20px;
     }
     .template-card {
       background: #f9f9f9;
@@ -383,7 +429,6 @@
     .form-row.full {
       grid-template-columns: 1fr;
     }
-    /* Modal styles */
     .modal {
       display: none;
       position: fixed;
@@ -473,99 +518,101 @@
     .info-box strong {
       color: #0055a5;
     }
-
-/* Mobile View Styles - COMPACT */
-.mobile-item-card {
-  background: #f9f9f9;
-  border: 1px solid #eee;
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.mobile-item-card.purchased {
-  background: #e6ffe6;
-  opacity: 0.7;
-}
-
-.mobile-item-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  margin-bottom: 6px;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-
-.mobile-item-name {
-  font-weight: bold;
-  font-size: 0.95rem;
-  color: #333;
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-item-qty {
-  background: #0055a5;
-  color: white;
-  padding: 2px 7px;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 0.75rem;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.mobile-item-price {
-  background: #28a745;
-  color: white;
-  padding: 2px 7px;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 0.75rem;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.mobile-item-description {
-  font-size: 0.8rem;
-  color: #666;
-  font-style: italic;
-  margin-bottom: 6px;
-}
-
-.mobile-purchased-button {
-  background: #0055a5;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
-  width: 100%;
-  display: block;
-  box-sizing: border-box;
-}
-
-.mobile-purchased-button:hover {
-  background: #003f7f;
-}
-
-.mobile-purchased-button.is-purchased {
-  background: #6c757d;
-}
-
-.mobile-purchased-button.is-purchased:hover {
-  background: #5a6268;
-}
+    .mobile-item-card {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    .mobile-item-card.purchased {
+      background: #e6ffe6;
+      opacity: 0.7;
+    }
+    .mobile-item-card.custom-item {
+      background: #fffbea;
+      border-left: 4px solid #ffc107;
+    }
+    .mobile-item-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      margin-bottom: 6px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    .mobile-item-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #333;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mobile-item-qty {
+      background: #0055a5;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .mobile-item-price {
+      background: #28a745;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .mobile-custom-badge {
+      background: #ffc107;
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-weight: bold;
+      font-size: 0.65rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .mobile-item-description {
+      font-size: 0.8rem;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+    .mobile-purchased-button {
+      background: #0055a5;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      cursor: pointer;
+      width: 100%;
+      display: block;
+      box-sizing: border-box;
+    }
+    .mobile-purchased-button:hover {
+      background: #003f7f;
+    }
+    .mobile-purchased-button.is-purchased {
+      background: #6c757d;
+    }
+    .mobile-purchased-button.is-purchased:hover {
+      background: #5a6268;
+    }
 
     @media (max-width: 768px) {
       .tab-button.mobile-only {
@@ -613,6 +660,15 @@
     <div class="header">
       <h1>Shopping List</h1>
       <button class="back-button" onclick="goBack()">Back to Home</button>
+    </div>
+
+    <!-- Store Selector -->
+    <div class="store-selector">
+      <label for="storeSelect">Select Store:</label>
+      <select id="storeSelect">
+        <option value="batley">Aldi - Batley</option>
+        <option value="wakefield">Aldi - Wakefield</option>
+      </select>
     </div>
 
     <div class="tabs">
@@ -769,7 +825,7 @@
     </div>
   </div>
 
-  <!-- Edit Item Modal (simplified for shopping list items) -->
+  <!-- Edit Item Modal -->
   <div id="editModal" class="modal">
     <div class="modal-content">
       <span class="modal-close">&times;</span>
@@ -834,6 +890,48 @@
     </div>
   </div>
 
+  <!-- Add to Template Modal -->
+  <div id="addToTemplateModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div class="modal-header">Add Custom Item to Templates</div>
+      <form id="addToTemplateForm">
+        <label for="atItemName">Item Name:</label>
+        <input type="text" id="atItemName" disabled />
+
+        <label for="atTemplateIsle">Isle:</label>
+        <input type="number" id="atTemplateIsle" placeholder="e.g., 1" required />
+
+        <label for="atTemplatePosition">Position:</label>
+        <select id="atTemplatePosition" required>
+          <option value="">Select Position</option>
+          <option value="Start">Start</option>
+          <option value="Middle">Middle</option>
+          <option value="End">End</option>
+        </select>
+
+        <label for="atTemplateSide">Side:</label>
+        <select id="atTemplateSide" required>
+          <option value="">Select Side</option>
+          <option value="Left">Left</option>
+          <option value="Right">Right</option>
+          <option value="End">End</option>
+        </select>
+
+        <label for="atTemplatePrice">Price (per unit):</label>
+        <input type="number" id="atTemplatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+
+        <label for="atTemplatePickOrder">Pick Order:</label>
+        <input type="number" id="atTemplatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." required />
+
+        <div class="modal-buttons">
+          <button type="button" class="cancel-button" id="cancelAddToTemplateButton">Cancel</button>
+          <button type="submit">Add to Templates</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
@@ -847,12 +945,20 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Back button function
+    let selectedStore = localStorage.getItem('selectedStore') || 'batley';
+    const storeSelect = document.getElementById('storeSelect');
+    storeSelect.value = selectedStore;
+
+    storeSelect.addEventListener('change', (e) => {
+      selectedStore = e.target.value;
+      localStorage.setItem('selectedStore', selectedStore);
+      location.reload();
+    });
+
     function goBack() {
       window.location.href = "index.html";
     }
 
-    // Tab switching
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
 
@@ -872,19 +978,22 @@
       });
     });
 
-    // Modal setup
     const editModal = document.getElementById('editModal');
     const editTemplateModal = document.getElementById('editTemplateModal');
+    const addToTemplateModal = document.getElementById('addToTemplateModal');
     const modalClose = document.querySelectorAll('.modal-close');
     const cancelEditButton = document.getElementById('cancelEditButton');
     const cancelEditTemplateButton = document.getElementById('cancelEditTemplateButton');
+    const cancelAddToTemplateButton = document.getElementById('cancelAddToTemplateButton');
     let editingItemId = null;
     let editingTemplateId = null;
+    let addingToTemplateItemName = null;
 
     modalClose.forEach(close => {
       close.addEventListener('click', () => {
         editModal.classList.remove('show');
         editTemplateModal.classList.remove('show');
+        addToTemplateModal.classList.remove('show');
       });
     });
 
@@ -896,6 +1005,10 @@
       editTemplateModal.classList.remove('show');
     });
 
+    cancelAddToTemplateButton.addEventListener('click', () => {
+      addToTemplateModal.classList.remove('show');
+    });
+
     window.addEventListener('click', (e) => {
       if (e.target === editModal) {
         editModal.classList.remove('show');
@@ -903,9 +1016,11 @@
       if (e.target === editTemplateModal) {
         editTemplateModal.classList.remove('show');
       }
+      if (e.target === addToTemplateModal) {
+        addToTemplateModal.classList.remove('show');
+      }
     });
 
-    // Elements
     const addItemForm = document.getElementById('addItemForm');
     const addTemplateForm = document.getElementById('addTemplateForm');
     const itemNameInput = document.getElementById('itemName');
@@ -921,22 +1036,22 @@
     let allShoppingItems = [];
     let allTemplates = [];
 
-    // Fetch all templates for autocomplete
-    db.collection('itemTemplates').onSnapshot((snapshot) => {
-      allTemplates = [];
-      snapshot.forEach((doc) => {
-        allTemplates.push({ id: doc.id, ...doc.data() });
+    db.collection('itemTemplates')
+      .where('store', '==', selectedStore)
+      .onSnapshot((snapshot) => {
+        allTemplates = [];
+        snapshot.forEach((doc) => {
+          allTemplates.push({ id: doc.id, ...doc.data() });
+        });
+        renderTemplates();
+        renderShoppingList(allShoppingItems);
+        renderMobileView(allShoppingItems);
+        renderRouteGuide(allShoppingItems);
+        if (document.getElementById('route-tab').classList.contains('active')) {
+          drawFloorPlan();
+        }
       });
-      renderTemplates();
-      renderShoppingList(allShoppingItems);
-      renderMobileView(allShoppingItems);
-      renderRouteGuide(allShoppingItems);
-      if (document.getElementById('route-tab').classList.contains('active')) {
-        drawFloorPlan();
-      }
-    });
 
-    // Autocomplete functionality
     itemNameInput.addEventListener('input', (e) => {
       const value = e.target.value.toLowerCase().trim();
       autocompleteSuggestions.innerHTML = '';
@@ -968,14 +1083,12 @@
       });
     });
 
-    // Close autocomplete when clicking outside
     document.addEventListener('click', (e) => {
       if (e.target !== itemNameInput) {
         autocompleteSuggestions.innerHTML = '';
       }
     });
 
-    // Function to add a new item
     addItemForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -991,7 +1104,29 @@
       const template = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
 
       if (!template) {
-        alert('This item does not exist in your templates. Please add it to Item Templates first.');
+        const confirmed = confirm('This item is not in your templates. Add it anyway as a custom one-off item? You can add it to templates later.');
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          await db.collection('shoppingList').add({
+            name: itemName,
+            description: itemDescription,
+            qty: itemQty,
+            purchased: false,
+            isCustom: true,
+            store: selectedStore,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          addItemForm.reset();
+          itemQtyInput.value = 1;
+          itemNameInput.focus();
+        } catch (error) {
+          console.error("Error adding document: ", error);
+          alert("Failed to add item. Please try again.");
+        }
         return;
       }
 
@@ -1001,6 +1136,8 @@
           description: itemDescription,
           qty: itemQty,
           purchased: false,
+          isCustom: false,
+          store: selectedStore,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -1013,7 +1150,6 @@
       }
     });
 
-    // Add template form
     addTemplateForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -1031,7 +1167,7 @@
 
       const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
       if (existingTemplate) {
-        alert('This item template already exists!');
+        alert('This item template already exists for this store!');
         return;
       }
 
@@ -1042,7 +1178,8 @@
           position: templatePosition,
           side: templateSide,
           price: templatePrice,
-          pickOrder: templatePickOrder
+          pickOrder: templatePickOrder,
+          store: selectedStore
         });
 
         addTemplateForm.reset();
@@ -1054,12 +1191,10 @@
       }
     });
 
-    // Helper function to get template data for a shopping item
     function getTemplateForItem(itemName) {
       return allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
     }
 
-    // Calculate costs
     function calculateCosts() {
       let unpurchasedTotal = 0;
       let purchasedTotal = 0;
@@ -1096,7 +1231,6 @@
       }
     }
 
-    // Function to render the shopping list
     const renderShoppingList = (items) => {
       itemsContainer.innerHTML = '';
 
@@ -1116,48 +1250,76 @@
         const templateA = getTemplateForItem(a.name);
         const templateB = getTemplateForItem(b.name);
 
-        if (!templateA || !templateB) return 0;
-
         if (a.purchased !== b.purchased) {
             return a.purchased - b.purchased;
         }
-        if (templateA.isle !== templateB.isle) {
-          return templateA.isle - templateB.isle;
+
+        const aIsCustom = a.isCustom || false;
+        const bIsCustom = b.isCustom || false;
+        if (aIsCustom && !bIsCustom) return 1;
+        if (!aIsCustom && bIsCustom) return -1;
+
+        if (aIsCustom && bIsCustom) {
+          return a.name.localeCompare(b.name);
         }
-        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
-          return positionOrder[templateA.position] - positionOrder[templateB.position];
+
+        if (templateA && templateB) {
+          if (templateA.isle !== templateB.isle) {
+            return templateA.isle - templateB.isle;
+          }
+          if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+            return positionOrder[templateA.position] - positionOrder[templateB.position];
+          }
+          const pickOrderA = templateA.pickOrder || 1;
+          const pickOrderB = templateB.pickOrder || 1;
+          if (pickOrderA !== pickOrderB) {
+            return pickOrderA - pickOrderB;
+          }
+          if (templateA.side !== templateB.side) {
+              return templateA.side.localeCompare(templateB.side);
+          }
         }
-        const pickOrderA = templateA.pickOrder || 1;
-        const pickOrderB = templateB.pickOrder || 1;
-        if (pickOrderA !== pickOrderB) {
-          return pickOrderA - pickOrderB;
-        }
-        if (templateA.side !== templateB.side) {
-            return templateA.side.localeCompare(templateB.side);
-        }
+
         return 0;
       });
 
       items.forEach(item => {
         const template = getTemplateForItem(item.name);
+        const isCustom = item.isCustom || false;
         
-        if (!template) {
-          return;
-        }
+        let itemTotal = '0.00';
+        let locationInfo = '';
 
-        const price = template.price || 0;
-        const itemTotal = (price * item.qty).toFixed(2);
+        if (template) {
+          const price = template.price || 0;
+          itemTotal = (price * item.qty).toFixed(2);
+          locationInfo = `<small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>`;
+        }
 
         const itemCard = document.createElement('div');
         itemCard.classList.add('item-card');
+        if (isCustom) {
+          itemCard.classList.add('custom-item');
+        }
         if (item.purchased) {
             itemCard.classList.add('purchased');
         }
+
+        let customBadge = '';
+        if (isCustom) {
+          customBadge = '<span class="custom-badge">CUSTOM</span>';
+        }
+
+        let addToTemplateButton = '';
+        if (isCustom) {
+          addToTemplateButton = `<button class="add-to-template-button" data-name="${item.name}" type="button">Add to Templates</button>`;
+        }
+
         itemCard.innerHTML = `
           <div class="item-info">
-            <strong>${item.name}</strong>
+            <strong>${item.name}${customBadge}</strong>
             ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
-            <small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>
+            ${locationInfo}
           </div>
           <div class="item-qty">${item.qty}x</div>
           <div class="item-price">£${itemTotal}</div>
@@ -1170,6 +1332,7 @@
                 ${item.purchased ? 'Unmark' : 'Purchased'}
             </button>
             <button class="edit-button" data-id="${item.id}" data-name="${item.name}" type="button">Edit</button>
+            ${addToTemplateButton}
             <button class="delete-button" data-id="${item.id}" type="button">Delete</button>
           </div>
         `;
@@ -1179,79 +1342,96 @@
       calculateCosts();
     };
 
-// Function to render mobile view
-const renderMobileView = (items) => {
-  mobileItemsContainer.innerHTML = '';
+    const renderMobileView = (items) => {
+      mobileItemsContainer.innerHTML = '';
 
-  if (items.length === 0) {
-    mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
-    return;
-  }
+      if (items.length === 0) {
+        mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
+        return;
+      }
 
-  const positionOrder = {
-    "Start": 1,
-    "Middle": 2,
-    "End": 3
-  };
+      const positionOrder = {
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
+      };
 
-  items.sort((a, b) => {
-    const templateA = getTemplateForItem(a.name);
-    const templateB = getTemplateForItem(b.name);
+      items.sort((a, b) => {
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
 
-    if (!templateA || !templateB) return 0;
+        if (a.purchased !== b.purchased) {
+            return a.purchased - b.purchased;
+        }
 
-    if (a.purchased !== b.purchased) {
-        return a.purchased - b.purchased;
-    }
-    if (templateA.isle !== templateB.isle) {
-      return templateA.isle - templateB.isle;
-    }
-    if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
-      return positionOrder[templateA.position] - positionOrder[templateB.position];
-    }
-    const pickOrderA = templateA.pickOrder || 1;
-    const pickOrderB = templateB.pickOrder || 1;
-    if (pickOrderA !== pickOrderB) {
-      return pickOrderA - pickOrderB;
-    }
-    if (templateA.side !== templateB.side) {
-        return templateA.side.localeCompare(templateB.side);
-    }
-    return 0;
-  });
+        const aIsCustom = a.isCustom || false;
+        const bIsCustom = b.isCustom || false;
+        if (aIsCustom && !bIsCustom) return 1;
+        if (!aIsCustom && bIsCustom) return -1;
 
-  items.forEach(item => {
-    const template = getTemplateForItem(item.name);
-    
-    if (!template) {
-      return;
-    }
+        if (aIsCustom && bIsCustom) {
+          return a.name.localeCompare(b.name);
+        }
 
-    const price = template.price || 0;
-    const itemTotal = (price * item.qty).toFixed(2);
+        if (templateA && templateB) {
+          if (templateA.isle !== templateB.isle) {
+            return templateA.isle - templateB.isle;
+          }
+          if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+            return positionOrder[templateA.position] - positionOrder[templateB.position];
+          }
+          const pickOrderA = templateA.pickOrder || 1;
+          const pickOrderB = templateB.pickOrder || 1;
+          if (pickOrderA !== pickOrderB) {
+            return pickOrderA - pickOrderB;
+          }
+          if (templateA.side !== templateB.side) {
+              return templateA.side.localeCompare(templateB.side);
+          }
+        }
+        return 0;
+      });
 
-    const mobileCard = document.createElement('div');
-    mobileCard.classList.add('mobile-item-card');
-    if (item.purchased) {
-        mobileCard.classList.add('purchased');
-    }
-    mobileCard.innerHTML = `
-      <div class="mobile-item-header">
-        <span class="mobile-item-name">${item.name}</span>
-        <span class="mobile-item-qty">${item.qty}x</span>
-        <span class="mobile-item-price">£${itemTotal}</span>
-      </div>
-      ${item.description ? `<div class="mobile-item-description">${item.description}</div>` : ''}
-      <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
-        ${item.purchased ? 'Undo' : 'Got It'}
-      </button>
-    `;
-    mobileItemsContainer.appendChild(mobileCard);
-  });
-};
+      items.forEach(item => {
+        const template = getTemplateForItem(item.name);
+        const isCustom = item.isCustom || false;
 
+        let itemTotal = '0.00';
+        if (template) {
+          const price = template.price || 0;
+          itemTotal = (price * item.qty).toFixed(2);
+        }
 
-    // Function to render templates
+        const mobileCard = document.createElement('div');
+        mobileCard.classList.add('mobile-item-card');
+        if (isCustom) {
+          mobileCard.classList.add('custom-item');
+        }
+        if (item.purchased) {
+            mobileCard.classList.add('purchased');
+        }
+
+        let customBadge = '';
+        if (isCustom) {
+          customBadge = '<span class="mobile-custom-badge">CUSTOM</span>';
+        }
+
+        mobileCard.innerHTML = `
+          <div class="mobile-item-header">
+            <span class="mobile-item-name">${item.name}</span>
+            ${customBadge}
+            <span class="mobile-item-qty">${item.qty}x</span>
+            <span class="mobile-item-price">£${itemTotal}</span>
+          </div>
+          ${item.description ? `<div class="mobile-item-description">${item.description}</div>` : ''}
+          <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
+            ${item.purchased ? 'Undo' : 'Got It'}
+          </button>
+        `;
+        mobileItemsContainer.appendChild(mobileCard);
+      });
+    };
+
     const renderTemplates = () => {
       templatesContainer.innerHTML = '';
 
@@ -1280,8 +1460,9 @@ const renderMobileView = (items) => {
       });
     };
 
-    // Real-time listener for shopping list
-    db.collection('shoppingList').orderBy('timestamp', 'asc')
+    db.collection('shoppingList')
+      .where('store', '==', selectedStore)
+      .orderBy('timestamp', 'asc')
       .onSnapshot((snapshot) => {
         allShoppingItems = [];
         snapshot.forEach((doc) => {
@@ -1297,7 +1478,6 @@ const renderMobileView = (items) => {
         console.error("Error fetching shopping list: ", error);
       });
 
-    // Floor Plan Drawing Function
     function drawFloorPlan() {
       const canvas = floorPlanCanvas;
       const ctx = canvas.getContext('2d');
@@ -1309,26 +1489,32 @@ const renderMobileView = (items) => {
       const width = canvas.width - 2 * padding;
       const height = canvas.height - 2 * padding;
 
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Store outline
       ctx.strokeStyle = '#0055a5';
       ctx.lineWidth = 3;
       ctx.strokeRect(padding, padding, width, height);
 
-      // Define aisles with their configuration
-      const aisles = [
-        { number: 5, direction: 'UP' },
-        { number: 4, direction: 'DOWN' },
-        { number: 3, direction: 'UP' },
-        { number: 2, direction: 'DOWN' },
-        { number: 1, direction: 'UP' }
-      ];
+      let aisles = [];
+      if (selectedStore === 'batley') {
+        aisles = [
+          { number: 5, direction: 'UP' },
+          { number: 4, direction: 'DOWN' },
+          { number: 3, direction: 'UP' },
+          { number: 2, direction: 'DOWN' },
+          { number: 1, direction: 'UP' }
+        ];
+      } else if (selectedStore === 'wakefield') {
+        aisles = [
+          { number: 4, direction: 'UP' },
+          { number: 3, direction: 'DOWN' },
+          { number: 2, direction: 'UP' },
+          { number: 1, direction: 'DOWN' }
+        ];
+      }
 
       const numAisles = aisles.length;
       const aisleGap = 15;
@@ -1340,16 +1526,13 @@ const renderMobileView = (items) => {
         aisleXStarts.push(padding + i * (individualAisleWidth + aisleGap));
       }
 
-      // Draw each aisle as a distinct rectangle
       aisleXStarts.forEach((xStart, i) => {
         const aisleInfo = aisles[i];
         const xCenter = xStart + individualAisleWidth / 2;
 
-        // Draw aisle background
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(xStart, padding, individualAisleWidth, height);
 
-        // Draw aisle number as a distinct rectangle
         const numMarkerWidth = 30;
         const numMarkerHeight = 24;
         const numMarkerX = xCenter - numMarkerWidth / 2;
@@ -1367,7 +1550,6 @@ const renderMobileView = (items) => {
         ctx.textBaseline = 'middle';
         ctx.fillText(aisleInfo.number, xCenter, numMarkerY + numMarkerHeight / 2);
 
-        // Draw direction arrow in center of aisle
         ctx.strokeStyle = '#0055a5';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -1392,7 +1574,6 @@ const renderMobileView = (items) => {
         ctx.stroke();
       });
 
-      // Draw distinct separation lines between aisles
       for (let i = 0; i < numAisles - 1; i++) {
         const separatorX = aisleXStarts[i] + individualAisleWidth + aisleGap / 2;
         ctx.strokeStyle = '#333';
@@ -1403,7 +1584,6 @@ const renderMobileView = (items) => {
         ctx.stroke();
       }
 
-      // Entry point (bottom center of Isle 1)
       const entryAisleIndex = aisles.findIndex(a => a.number === 1);
       const entryX = aisleXStarts[entryAisleIndex] + individualAisleWidth / 2;
       const entryY = padding + height + 20;
@@ -1417,7 +1597,6 @@ const renderMobileView = (items) => {
       ctx.textBaseline = 'top';
       ctx.fillText('ENTRY', entryX, entryY + 12);
       
-      // Get unpurchased items
       const unpurchasedItems = allShoppingItems.filter(item => !item.purchased && getTemplateForItem(item.name));
 
       if (unpurchasedItems.length === 0) {
@@ -1429,7 +1608,6 @@ const renderMobileView = (items) => {
         return;
       }
 
-      // Sort items for routing
       const positionOrder = { "Start": 1, "Middle": 2, "End": 3 };
       unpurchasedItems.sort((a, b) => {
           const templateA = getTemplateForItem(a.name);
@@ -1444,7 +1622,6 @@ const renderMobileView = (items) => {
           return 0;
       });
 
-      // Plot items on the map
       const itemPositions = [];
       
       unpurchasedItems.forEach((item, index) => {
@@ -1457,7 +1634,6 @@ const renderMobileView = (items) => {
           const xCenter = xStart + individualAisleWidth / 2;
           const direction = aisleConfig.direction;
           
-          // Determine X position based on side
           let itemX;
           
           let sideToUse = template.side;
@@ -1473,7 +1649,6 @@ const renderMobileView = (items) => {
               itemX = xCenter;
           }
 
-          // Determine Y position based on position in aisle and direction
           let itemY;
           if (template.position === 'Start') {
             itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
@@ -1487,7 +1662,6 @@ const renderMobileView = (items) => {
         }
       });
 
-      // Draw path connecting items
       if (itemPositions.length > 0) {
         ctx.strokeStyle = '#28a745';
         ctx.lineWidth = 3;
@@ -1503,7 +1677,6 @@ const renderMobileView = (items) => {
         ctx.setLineDash([]);
       }
 
-      // Draw item circles
       itemPositions.forEach(pos => {
         ctx.fillStyle = '#0055a5';
         ctx.beginPath();
@@ -1527,7 +1700,6 @@ const renderMobileView = (items) => {
       }
     }
 
-    // Route Guide Function
     function renderRouteGuide(items) {
       const routeGuideItems = document.getElementById('routeGuideItems');
       routeGuideItems.innerHTML = '';
@@ -1585,7 +1757,6 @@ const renderMobileView = (items) => {
       });
     }
 
-    // Clear all purchased items
     async function clearAllPurchased() {
       if (!confirm('Are you sure you want to delete all purchased items?')) {
         return;
@@ -1611,7 +1782,6 @@ const renderMobileView = (items) => {
       }
     }
 
-    // Mark all as purchased
     async function markAllPurchased() {
       if (!confirm('Mark all items as purchased?')) {
         return;
@@ -1639,7 +1809,6 @@ const renderMobileView = (items) => {
       }
     }
 
-    // Update quantity
     async function updateQuantity(itemId, increment) {
       const item = allShoppingItems.find(i => i.id === itemId);
       if (!item) return;
@@ -1657,7 +1826,6 @@ const renderMobileView = (items) => {
       }
     }
 
-    // Event delegation for shopping list actions
     itemsContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-button')) {
             const itemId = e.target.dataset.id;
@@ -1697,6 +1865,11 @@ const renderMobileView = (items) => {
             } catch (error) {
               console.error("Error fetching item: ", error);
             }
+        } else if (e.target.classList.contains('add-to-template-button')) {
+            const itemName = e.target.dataset.name;
+            addingToTemplateItemName = itemName;
+            document.getElementById('atItemName').value = itemName;
+            addToTemplateModal.classList.add('show');
         } else if (e.target.classList.contains('qty-increase-button')) {
             const itemId = e.target.dataset.id;
             updateQuantity(itemId, true);
@@ -1706,106 +1879,139 @@ const renderMobileView = (items) => {
         }
     });
 
-    // Event delegation for mobile view actions
     mobileItemsContainer.addEventListener('click', async (e) => {
-      if (e.target.classList.contains('mobile-purchased-button')) {
-        const itemId = e.target.dataset.id;
-        const currentPurchasedStatus = e.target.dataset.purchased === 'true';
-        try {
-          await db.collection('shoppingList').doc(itemId).update({
-            purchased: !currentPurchasedStatus
-          });
-        } catch (error) {
-          console.error("Error updating document: ", error);
-          alert("Failed to update item status. Please try again.");
+        if (e.target.classList.contains('mobile-purchased-button')) {
+            const itemId = e.target.dataset.id;
+            const currentPurchasedStatus = e.target.dataset.purchased === 'true';
+            try {
+                await db.collection('shoppingList').doc(itemId).update({
+                    purchased: !currentPurchasedStatus
+                });
+            } catch (error) {
+                console.error("Error updating document: ", error);
+                alert("Failed to update item status. Please try again.");
+            }
         }
-      }
     });
 
-    // Event delegation for template actions
     templatesContainer.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('delete-button') && e.target.closest('#templatesContainer')) {
+        if (e.target.classList.contains('delete-button')) {
             const templateId = e.target.dataset.id;
             if (confirm('Are you sure you want to delete this template?')) {
                 try {
                     await db.collection('itemTemplates').doc(templateId).delete();
                 } catch (error) {
-                    console.error("Error removing template: ", error);
+                    console.error("Error deleting template: ", error);
                     alert("Failed to delete template. Please try again.");
                 }
             }
-        } else if (e.target.classList.contains('edit-button') && e.target.closest('#templatesContainer')) {
+        } else if (e.target.classList.contains('edit-button')) {
             const templateId = e.target.dataset.id;
-            const template = allTemplates.find(t => t.id === templateId);
+            const templateName = e.target.dataset.name;
+            editingTemplateId = templateId;
             
-            if (template) {
-              editingTemplateId = templateId;
-              document.getElementById('editTemplateItemName').value = template.name;
-              document.getElementById('editTemplateIsle').value = template.isle;
-              document.getElementById('editTemplatePosition').value = template.position;
-              document.getElementById('editTemplateSide').value = template.side;
-              document.getElementById('editTemplatePrice').value = template.price || 0;
-              document.getElementById('editTemplatePickOrder').value = template.pickOrder || 1;
-              editTemplateModal.classList.add('show');
+            try {
+              const doc = await db.collection('itemTemplates').doc(templateId).get();
+              if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('editTemplateItemName').value = data.name;
+                document.getElementById('editTemplateIsle').value = data.isle;
+                document.getElementById('editTemplatePosition').value = data.position;
+                document.getElementById('editTemplateSide').value = data.side;
+                document.getElementById('editTemplatePrice').value = data.price || 0;
+                document.getElementById('editTemplatePickOrder').value = data.pickOrder || 1;
+                
+                editTemplateModal.classList.add('show');
+              }
+            } catch (error) {
+              console.error("Error fetching template: ", error);
             }
         }
     });
 
-    // Edit item form submission
     document.getElementById('editForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const editDescription = document.getElementById('editItemDescription').value.trim();
-      const editQty = parseInt(document.getElementById('editItemQty').value);
+      const itemDescription = document.getElementById('editItemDescription').value.trim();
+      const itemQty = parseInt(document.getElementById('editItemQty').value);
 
-      if (isNaN(editQty) || editQty < 1) {
+      if (isNaN(itemQty) || itemQty < 1) {
         alert('Please fill in all required fields correctly.');
         return;
       }
 
       try {
         await db.collection('shoppingList').doc(editingItemId).update({
-          description: editDescription,
-          qty: editQty
+          description: itemDescription,
+          qty: itemQty
         });
-
         editModal.classList.remove('show');
-        editingItemId = null;
+        alert('Item updated successfully!');
       } catch (error) {
-        console.error("Error updating document: ", error);
+        console.error("Error updating item: ", error);
         alert("Failed to update item. Please try again.");
       }
     });
 
-    // Edit template form submission
     document.getElementById('editTemplateForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const editTemplateIsle = parseInt(document.getElementById('editTemplateIsle').value);
-      const editTemplatePosition = document.getElementById('editTemplatePosition').value;
-      const editTemplateSide = document.getElementById('editTemplateSide').value;
-      const editTemplatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
-      const editTemplatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value);
+      const templateIsle = parseInt(document.getElementById('editTemplateIsle').value);
+      const templatePosition = document.getElementById('editTemplatePosition').value;
+      const templateSide = document.getElementById('editTemplateSide').value;
+      const templatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
+      const templatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value);
 
-      if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide || isNaN(editTemplatePickOrder)) {
+      if (isNaN(templateIsle) || !templatePosition || !templateSide || isNaN(templatePickOrder)) {
         alert('Please fill in all required fields correctly.');
         return;
       }
 
       try {
         await db.collection('itemTemplates').doc(editingTemplateId).update({
-          isle: editTemplateIsle,
-          position: editTemplatePosition,
-          side: editTemplateSide,
-          price: editTemplatePrice,
-          pickOrder: editTemplatePickOrder
+          isle: templateIsle,
+          position: templatePosition,
+          side: templateSide,
+          price: templatePrice,
+          pickOrder: templatePickOrder
         });
-
         editTemplateModal.classList.remove('show');
-        editingTemplateId = null;
+        alert('Template updated successfully!');
       } catch (error) {
         console.error("Error updating template: ", error);
         alert("Failed to update template. Please try again.");
+      }
+    });
+
+    document.getElementById('addToTemplateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const templateIsle = parseInt(document.getElementById('atTemplateIsle').value);
+      const templatePosition = document.getElementById('atTemplatePosition').value;
+      const templateSide = document.getElementById('atTemplateSide').value;
+      const templatePrice = parseFloat(document.getElementById('atTemplatePrice').value) || 0;
+      const templatePickOrder = parseInt(document.getElementById('atTemplatePickOrder').value);
+
+      if (isNaN(templateIsle) || !templatePosition || !templateSide || isNaN(templatePickOrder)) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      try {
+        await db.collection('itemTemplates').add({
+          name: addingToTemplateItemName,
+          isle: templateIsle,
+          position: templatePosition,
+          side: templateSide,
+          price: templatePrice,
+          pickOrder: templatePickOrder,
+          store: selectedStore
+        });
+        addToTemplateModal.classList.remove('show');
+        alert('Template added successfully!');
+      } catch (error) {
+        console.error("Error adding template: ", error);
+        alert("Failed to add template. Please try again.");
       }
     });
   </script>
