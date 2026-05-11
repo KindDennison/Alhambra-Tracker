@@ -395,8 +395,8 @@
             <div class="header-controls">
                 <label for="storeSelect">Select Store:</label>
                 <select id="storeSelect">
-                    <option value="batley">Batley</option>
                     <option value="Aldi - Wakefield">Aldi - Wakefield</option>
+                    <option value="Aldi - Batley">Aldi - Batley</option>
                     <!-- Add more stores as needed -->
                 </select>
                 <button onclick="goBack()">Back to Home</button>
@@ -455,7 +455,7 @@
                             <label for="templateStore">Store:</label>
                             <select id="templateStore" required>
                                 <option value="Aldi - Wakefield">Aldi - Wakefield</option>
-                                <option value="batley">Batley</option>
+                                <option value="Aldi - Batley">Aldi - Batley</option>
                                 <!-- Add more stores dynamically or hardcode -->
                             </select>
                         </div>
@@ -531,7 +531,7 @@
                 <label for="editTemplateStore">Store:</label>
                 <select id="editTemplateStore" required>
                     <option value="Aldi - Wakefield">Aldi - Wakefield</option>
-                    <option value="batley">Batley</option>
+                    <option value="Aldi - Batley">Aldi - Batley</option>
                     <!-- Add more stores dynamically or hardcode -->
                 </select>
 
@@ -701,7 +701,7 @@
                       allShoppingItems.push({ id: doc.id, ...doc.data() });
                   });
                   renderShoppingList(allShoppingItems);
-                  renderMobileView(allShoppingItems); // Assuming this function exists elsewhere
+                  // renderMobileView(allShoppingItems); // Commented out as this wasn't defined in the original file
                   renderRouteGuide(allShoppingItems);
                   // Only draw floor plan if route tab is active and shopping list items exist
                   if (document.getElementById('route-tab').classList.contains('active')) {
@@ -774,7 +774,7 @@
                 return;
             }
 
-            // Check if item already exists in the shopping list
+            // Check if item already exists in the shopping list for the current store
             const existingItem = allShoppingItems.find(item => item.name.toLowerCase() === itemName.toLowerCase() && item.store === selectedStore);
 
             if (existingItem) {
@@ -943,7 +943,7 @@
                     <div class="template-details">
                         <strong>${template.name}</strong>
                         <span>Store: ${template.store}</span>
-                        ${template.isle ? `<span>Aisle: ${template.isle}${template.position ? ` (${template.position})` : ''}${template.side ? ` - ${template.side}` : ''}</span>` : ''}
+                        ${template.isle ? `<span>Aisle: ${template.isle}${template.position ? ` (${template.position})` : ''}${template.side ? `, ${template.side}` : ''}</span>` : ''}
                         ${template.price ? `<span>Price: £${template.price.toFixed(2)}</span>` : ''}
                         ${template.pickOrder ? `<span>Pick Order: ${template.pickOrder}</span>` : ''}
                     </div>
@@ -967,7 +967,9 @@
             if (template) {
                 editTemplateIdInput.value = template.id;
                 editTemplateItemNameInput.value = template.name;
-                editTemplateStoreSelect.value = template.store; // Set store
+                // Ensure the editTemplateStoreSelect options are correctly populated and selected
+                // This is handled by populateStoreDropdowns(), but we'll set the value here.
+                editTemplateStoreSelect.value = template.store;
                 editTemplateIsleInput.value = template.isle || '';
                 editTemplatePositionInput.value = template.position || '';
                 editTemplateSideSelect.value = template.side || '';
@@ -994,12 +996,14 @@
             }
 
             // Check if changing store would create a duplicate template name for that store
-            if (store !== selectedStore) { // Only check if store is being changed
+            // Only perform this check if the store is being changed for the template
+            const originalTemplate = allTemplates.find(t => t.id === id);
+            if (originalTemplate && originalTemplate.store !== store) {
                 const duplicateCheck = await db.collection('itemTemplates')
                     .where('name', '==', name)
                     .where('store', '==', store)
                     .get();
-                if (!duplicateCheck.empty && duplicateCheck.docs[0].id !== id) {
+                if (!duplicateCheck.empty) {
                     alert(`A template for "${name}" already exists for ${store}. Please choose a different store or item name.`);
                     return;
                 }
@@ -1022,15 +1026,10 @@
         }
 
         function updateAutocomplete(templates) {
-            // No direct update needed here for the suggestions, as it reacts to input events
-            // But this function ensures 'allTemplates' is refreshed for the autocomplete logic
-        }
-
-        function renderMobileView(items) {
-            // Placeholder for rendering for mobile view, if applicable.
-            // This function was mentioned in pasted.txt but not fully implemented.
-            // For now, it will just log.
-            // console.log("Rendering for mobile view (not implemented yet)", items);
+            // This function exists mainly to be called after fetchItemTemplates
+            // The actual autocomplete logic is in the itemNameInput event listener
+            // which references the `allTemplates` global variable.
+            // No direct code change needed here for functionality.
         }
 
         // --- Shop Route Drawing ---
@@ -1054,7 +1053,7 @@
             ctx.strokeRect(padding, padding, width, height);
 
             let aisles = [];
-            if (selectedStore === 'batley') { // Example for 'batley' store
+            if (selectedStore === 'Aldi - Batley') { // Example for 'Aldi - Batley' store
                 aisles = [
                     { number: 1, direction: 'down' },
                     { number: 2, direction: 'up' },
@@ -1090,7 +1089,8 @@
                 ctx.fillStyle = '#000';
                 ctx.font = '16px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(aisle.number, xCenter, padding - 15);
+                ctx.textBaseline = 'bottom'; // Align text baseline to bottom
+                ctx.fillText(aisle.number, xCenter, padding - 5); // Position slightly above the padding line
 
                 // Draw arrow for direction
                 const arrowLength = height * 0.6; // Length of the main arrow line
@@ -1098,6 +1098,7 @@
                 const arrowMargin = height * 0.2; // Margin from top/bottom of aisle
 
                 ctx.beginPath();
+                ctx.strokeStyle = '#0055a5'; // Set arrow color
                 if (aisle.direction === 'up') {
                     ctx.moveTo(xCenter, padding + arrowMargin + arrowLength);
                     ctx.lineTo(xCenter, padding + arrowMargin);
@@ -1118,8 +1119,9 @@
 
             // Draw entry point (red circle)
             const entryRadius = 8;
-            const entryX = padding + width + entryRadius * 2; // Position it just outside the right edge
-            const entryY = padding + height - entryRadius; // Near the bottom right
+            // Position it near the bottom right of the store layout, just outside the boundary
+            const entryX = padding + width + (padding / 2) + entryRadius;
+            const entryY = padding + height - entryRadius;
             ctx.beginPath();
             ctx.arc(entryX, entryY, entryRadius, 0, 2 * Math.PI);
             ctx.fillStyle = 'red';
@@ -1131,12 +1133,14 @@
             ctx.fillStyle = '#000';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('ENTRY', entryX, entryY + entryRadius + 15);
+            ctx.textBaseline = 'top'; // Align text baseline to top
+            ctx.fillText('ENTRY', entryX, entryY + entryRadius + 5);
+
 
             // Draw shopping item markers if any
             const itemsToShop = allShoppingItems.filter(item => !item.checked && item.isle && item.pickOrder);
             if (itemsToShop.length > 0) {
-                // Sort items by their pick order to draw the path correctly
+                // Sort items by their pick order
                 itemsToShop.sort((a, b) => a.pickOrder - b.pickOrder);
 
                 let itemPositions = [];
@@ -1146,12 +1150,19 @@
                         const aisleStartX = padding + aisleIndex * aisleWidth;
                         const aisleCenterX = aisleStartX + aisleWidth / 2;
 
-                        // Simple vertical placement within the aisle for now
-                        // You could add logic for 'position' and 'side' if needed for more granular placement
-                        const itemY = padding + (height / (itemsToShop.length + 1)) * (index + 1); // Distribute items vertically
+                        // Calculate y position within the aisle, considering side if available
+                        let itemY;
+                        const itemsInThisAisle = itemsToShop.filter(i => i.isle === item.isle);
+                        const aisleHeightAvailable = height; // Total height of an aisle for item distribution
+                        const itemHeightFactor = aisleHeightAvailable / (itemsInThisAisle.length + 1);
 
-                        // Store position and pick order for drawing path
-                        itemPositions.push({ x: aisleCenterX, y: itemY, index: index, pickOrder: item.pickOrder });
+                        // A simple way to distribute items vertically within an aisle
+                        // This can be made more sophisticated with actual shelf positions/coordinates
+                        const itemInAisleIndex = itemsInThisAisle.indexOf(item);
+                        itemY = padding + (itemInAisleIndex + 1) * itemHeightFactor;
+
+
+                        itemPositions.push({ x: aisleCenterX, y: itemY, item: item });
 
                         // Draw item marker
                         ctx.fillStyle = '#0055a5';
@@ -1166,6 +1177,9 @@
                         ctx.fillText(item.pickOrder, aisleCenterX, itemY); // Show pick order on marker
                     }
                 });
+
+                // Sort itemPositions by their pick order before drawing the path
+                itemPositions.sort((a, b) => a.item.pickOrder - b.item.pickOrder);
 
                 // Draw path connecting entry to items, and between items
                 if (itemPositions.length > 0) {
@@ -1196,7 +1210,10 @@
                 drawFloorPlan();
             }
         });
-        resizeObserver.observe(floorPlanCanvas.parentElement); // Observe the parent to detect width changes
+        // Observe the parent of the canvas to detect width changes which would affect canvas size
+        if (floorPlanCanvas.parentElement) {
+            resizeObserver.observe(floorPlanCanvas.parentElement);
+        }
 
 
         function renderRouteGuide(items) {
@@ -1204,7 +1221,7 @@
             const itemsForRoute = items.filter(item => !item.checked && item.isle && item.pickOrder);
 
             if (itemsForRoute.length === 0) {
-                shoppingRouteList.innerHTML = '<li>No items with aisle or pick order information.</li>';
+                shoppingRouteList.innerHTML = '<li>No items with aisle or pick order information to display route.</li>';
                 return;
             }
 
@@ -1214,7 +1231,7 @@
             itemsForRoute.forEach(item => {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <span>${item.pickOrder}.</span> ${item.name} 
+                    <span>${item.pickOrder}.</span> ${item.name}
                     ${item.isle ? `(Aisle ${item.isle}${item.position ? `, ${item.position}` : ''}${item.side ? `, ${item.side}` : ''})` : ''}
                 `;
                 shoppingRouteList.appendChild(li);
