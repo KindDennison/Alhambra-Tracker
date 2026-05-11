@@ -1,1242 +1,1813 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping List App</title>
-    <!-- Firebase SDK - ALWAYS place these in the head or just before the closing </body> tag -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 28px;
-            color: #0055a5;
-        }
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .header-controls select {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        .header-controls button {
-            background-color: #0055a5;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        .header-controls button:hover {
-            background-color: #004488;
-        }
-        .tab-buttons {
-            display: flex;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 20px;
-        }
-        .tab-button {
-            padding: 12px 20px;
-            cursor: pointer;
-            border: none;
-            background-color: #f9f9f9;
-            border-bottom: 2px solid transparent;
-            font-size: 17px;
-            color: #555;
-            transition: all 0.3s ease;
-        }
-        .tab-button:hover:not(.active) {
-            background-color: #e9e9e9;
-        }
-        .tab-button.active {
-            background-color: #fff;
-            border-bottom: 2px solid #0055a5;
-            color: #0055a5;
-            font-weight: bold;
-        }
-        .tab-content {
-            display: none;
-            padding: 20px 0;
-        }
-        .tab-content.active {
-            display: block;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopping List</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #0055a5;
+      margin: 0;
+    }
+    .back-button {
+      padding: 10px 20px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .back-button:hover {
+      background: #5a6268;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+      flex-wrap: wrap;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .tab-button.active {
+      color: #0055a5;
+      border-bottom-color: #0055a5;
+    }
+    .tab-button:hover {
+      color: #0055a5;
+    }
+    .tab-button.mobile-only {
+      display: none;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    form label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    form input[type="text"],
+    form input[type="number"],
+    form select {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    form button {
+      width: 100%;
+      padding: 10px;
+      background: #0055a5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    form button:hover {
+      background: #003f7f;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #eee;
+    }
+    .action-buttons button {
+      flex: 1;
+      padding: 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .action-buttons button:hover {
+      background: #218838;
+    }
+    .action-buttons button.danger {
+      background: #dc3545;
+    }
+    .action-buttons button.danger:hover {
+      background: #c82333;
+    }
+    /* Floor Plan Styles */
+    .floor-plan-container {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 2px solid #e9ecef;
+      text-align: center;
+    }
+    .floor-plan-canvas {
+      width: 100%;
+      max-width: 800px;
+      border: 2px solid #0055a5;
+      border-radius: 4px;
+      background: white;
+      display: block;
+      margin: 0 auto;
+    }
+    .route-guide {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f0f8ff;
+      border-left: 4px solid #0055a5;
+      border-radius: 4px;
+    }
+    .route-guide h3 {
+      color: #0055a5;
+      margin-top: 0;
+    }
+    .route-item {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-left: 4px solid #0055a5;
+    }
+    .route-number {
+      background: #0055a5;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .route-details {
+      flex: 1;
+    }
+    .route-details strong {
+      color: #0055a5;
+      font-size: 1.1rem;
+    }
+    .route-details small {
+      display: block;
+      color: #666;
+      margin-top: 5px;
+    }
+    .route-description {
+      display: block;
+      color: #999;
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 3px;
+    }
+    #shoppingListDisplay {
+      margin-top: 30px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    .item-card {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+    .item-card.purchased {
+        background: #e6ffe6;
+        text-decoration: line-through;
+        color: #666;
+    }
+    .item-info {
+      flex: 1;
+    }
+    .item-card button {
+        width: auto;
+        padding: 5px 10px;
+        margin-left: 5px;
+        font-size: 0.8rem;
+    }
+    .item-card .actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    .item-card .delete-button {
+        background-color: #dc3545;
+    }
+    .item-card .delete-button:hover {
+        background-color: #c82333;
+    }
+    .item-card .purchased-button {
+        background-color: #28a745;
+    }
+    .item-card .purchased-button:hover {
+        background-color: #218838;
+    }
+    .item-card .edit-button {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .item-card .edit-button:hover {
+        background-color: #e0a800;
+    }
+    .item-description {
+      color: #666;
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 4px;
+    }
+    .item-qty {
+      background: #0055a5;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      min-width: 50px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .item-price {
+      background: #28a745;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      min-width: 70px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .qty-controls {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .qty-controls button {
+      width: auto;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      margin-left: 0;
+      background-color: #0055a5;
+    }
+    .qty-controls button:hover {
+      background-color: #003f7f;
+    }
+    .cost-summary {
+      background: #f0f8ff;
+      border: 2px solid #0055a5;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: right;
+    }
+    .cost-summary h3 {
+      color: #0055a5;
+      margin: 0 0 15px 0;
+    }
+    .cost-line {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    .cost-line strong {
+      margin-left: 20px;
+      min-width: 100px;
+      text-align: right;
+    }
+    .cost-total {
+      border-top: 2px solid #0055a5;
+      padding-top: 15px;
+      margin-top: 15px;
+      font-size: 1.3rem;
+      color: #0055a5;
+    }
+    .no-items {
+        text-align: center;
+        color: #666;
+        padding: 20px;
+    }
+    .template-card {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+    .template-card .info {
+      flex: 1;
+    }
+    .template-card button {
+      width: auto;
+      padding: 5px 10px;
+      margin-left: 10px;
+      font-size: 0.8rem;
+    }
+    .template-card .edit-button {
+      background-color: #ffc107;
+      color: #000;
+    }
+    .template-card .edit-button:hover {
+      background-color: #e0a800;
+    }
+    .template-card .delete-button {
+      background-color: #dc3545;
+    }
+    .template-card .delete-button:hover {
+      background-color: #c82333;
+    }
+    .template-form-section {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .template-form-section h3 {
+      color: #0055a5;
+      margin-top: 0;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .form-row.full {
+      grid-template-columns: 1fr;
+    }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+    .modal.show {
+      display: block;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #0055a5;
+    }
+    .modal-close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .modal-close:hover {
+      color: #000;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 10px;
+    }
+    .cancel-button {
+      background-color: #6c757d;
+    }
+    .cancel-button:hover {
+      background-color: #5a6268;
+    }
+    .autocomplete-suggestions {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      max-height: 150px;
+      overflow-y: auto;
+      width: calc(100% - 22px);
+      z-index: 999;
+      border-radius: 0 0 4px 4px;
+    }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+    .form-group {
+      position: relative;
+      margin-bottom: 15px;
+    }
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #0055a5;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      color: #333;
+    }
+    .info-box strong {
+      color: #0055a5;
+    }
 
-        /* Shopping List Tab Styles */
-        #shopping-list-tab h2, #templates-tab h2 {
-            color: #0055a5;
-            margin-bottom: 20px;
-        }
-        #addItemForm, #addTemplateForm {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        #addItemForm input[type="text"],
-        #addItemForm input[type="number"],
-        #addItemForm select,
-        #addTemplateForm input[type="text"],
-        #addTemplateForm input[type="number"],
-        #addTemplateForm select {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-            flex-grow: 1;
-            min-width: 120px;
-        }
-        #addItemForm button, #addTemplateForm button {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-            flex-shrink: 0;
-        }
-        #addItemForm button:hover, #addTemplateForm button:hover {
-            background-color: #218838;
-        }
-        .autocomplete-suggestions {
-            border: 1px solid #ccc;
-            max-height: 150px;
-            overflow-y: auto;
-            background-color: #fff;
-            position: absolute; /* Changed to absolute for proper positioning */
-            width: calc(100% - 22px); /* Adjust width based on input field */
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            border-top: none;
-            margin-top: -1px; /* Overlap with input border */
-        }
-        .autocomplete-suggestions div {
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-        }
-        .autocomplete-suggestions div:hover {
-            background-color: #f0f0f0;
-        }
-        .autocomplete-suggestions div:last-child {
-            border-bottom: none;
-        }
-        .shopping-list-item, .template-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #fff;
-            border: 1px solid #eee;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .shopping-list-item.checked {
-            background-color: #e6ffe6;
-            text-decoration: line-through;
-            color: #888;
-        }
-        .item-details, .template-details {
-            flex-grow: 1;
-        }
-        .item-details strong, .template-details strong {
-            font-size: 18px;
-            color: #333;
-        }
-        .item-details span, .template-details span {
-            display: block;
-            font-size: 14px;
-            color: #777;
-        }
-        .item-actions, .template-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .item-actions button, .template-actions button {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-        .item-actions button.delete, .template-actions button.delete {
-            background-color: #dc3545;
-        }
-        .item-actions button:hover, .template-actions button:hover {
-            opacity: 0.9;
-        }
-        #costSummary {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #0055a5;
-            text-align: right;
-        }
+/* Mobile View Styles - COMPACT */
+.mobile-item-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
 
-        /* Shop Route Tab Styles */
-        #floorPlanCanvas {
-            border: 1px solid #ccc;
-            background-color: #fff;
-            display: block;
-            width: 100%; /* Ensure canvas scales */
-            height: auto; /* Maintain aspect ratio */
-            box-sizing: border-box; /* Include padding and border in the element's total width and height */
-        }
-        #route-guide {
-            margin-top: 20px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-        #route-guide h3 {
-            color: #0055a5;
-            margin-bottom: 15px;
-        }
-        #route-guide ol {
-            list-style: none;
-            padding: 0;
-        }
-        #route-guide li {
-            background-color: #eaf6ff;
-            border: 1px solid #cceeff;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        #route-guide li span {
-            font-weight: bold;
-            color: #0055a5;
-        }
+.mobile-item-card.purchased {
+  background: #e6ffe6;
+  opacity: 0.7;
+}
 
-        /* Item Templates Tab Styles */
-        .template-form-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: flex-end;
-        }
-        .template-form-group > div {
-            flex: 1;
-            min-width: 150px;
-        }
-        .template-form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        .template-form-group input, .template-form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .template-form-section {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .template-form-section h3 {
-            color: #0055a5;
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        .template-form-section button {
-            background-color: #0055a5;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        .template-form-section button:hover {
-            background-color: #004488;
-        }
-        .template-list {
-            margin-top: 30px;
-        }
-        .template-list h3 {
-            color: #0055a5;
-            margin-bottom: 15px;
-        }
+.mobile-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
 
-        /* Modal Styles */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #888;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            position: relative;
-        }
-        .modal-content h2 {
-            color: #0055a5;
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .modal-content form label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-        }
-        .modal-content form input[type="text"],
-        .modal-content form input[type="number"],
-        .modal-content form select {
-            width: calc(100% - 20px); /* Adjust for padding */
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .modal-content form button {
-            background-color: #0055a5;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .modal-content form button:hover {
-            background-color: #004488;
-        }
-        .modal-content .close-button {
-            color: #aaa;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .modal-content .close-button:hover,
-        .modal-content .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
+.mobile-item-name {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-item-qty {
+  background: #0055a5;
+  color: white;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.mobile-item-price {
+  background: #28a745;
+  color: white;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.mobile-item-description {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.mobile-purchased-button {
+  background: #0055a5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
+
+.mobile-purchased-button:hover {
+  background: #003f7f;
+}
+
+.mobile-purchased-button.is-purchased {
+  background: #6c757d;
+}
+
+.mobile-purchased-button.is-purchased:hover {
+  background: #5a6268;
+}
+
+    @media (max-width: 768px) {
+      .tab-button.mobile-only {
+        display: block;
+      }
+      .tab-button.desktop-only {
+        display: none;
+      }
+      .action-buttons {
+        flex-direction: column;
+      }
+      .item-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .item-card .actions {
+        width: 100%;
+        margin-top: 10px;
+      }
+      .qty-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .cost-summary {
+        text-align: left;
+      }
+      .cost-line {
+        justify-content: space-between;
+      }
+      .cost-line strong {
+        margin-left: 0;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      /* Flexbox layout handles small screens natively now */
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Shopping List</h1>
-            <div class="header-controls">
-                <label for="storeSelect">Select Store:</label>
-                <select id="storeSelect">
-                    <option value="Aldi - Wakefield">Aldi - Wakefield</option>
-                    <option value="Aldi - Batley">Aldi - Batley</option>
-                    <!-- Add more stores as needed -->
-                </select>
-                <button onclick="goBack()">Back to Home</button>
-            </div>
-        </header>
-
-        <div class="tab-buttons">
-            <button class="tab-button active" data-tab="shopping-list">Shopping List</button>
-            <button class="tab-button" data-tab="route">Shop Route</button>
-            <button class="tab-button" data-tab="templates">Item Templates</button>
-        </div>
-
-        <div id="shopping-list-tab" class="tab-content active">
-            <h2>Your Shopping List</h2>
-            <form id="addItemForm">
-                <div style="position: relative; flex-grow: 3;">
-                    <label for="itemName">Item Name:</label>
-                    <input type="text" id="itemName" placeholder="e.g., Milk" required>
-                    <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
-                </div>
-                <div>
-                    <label for="quantity">Qty:</label>
-                    <input type="number" id="quantity" value="1" min="1" required>
-                </div>
-                <div>
-                    <button type="submit">Add Item</button>
-                </div>
-            </form>
-            <div id="shoppingListItems">
-                <!-- Shopping list items will be rendered here -->
-            </div>
-            <div id="costSummary"></div>
-        </div>
-
-        <div id="route-tab" class="tab-content">
-            <h2>Your Shopping Route</h2>
-            <canvas id="floorPlanCanvas"></canvas>
-            <div id="route-guide">
-                <h3>Shopping Order:</h3>
-                <ol id="shoppingRouteList">
-                    <!-- Shopping route items will be rendered here -->
-                </ol>
-            </div>
-        </div>
-
-        <div id="templates-tab" class="tab-content">
-            <div class="template-form-section">
-                <h3>Add New Template</h3>
-                <form id="addTemplateForm">
-                    <div class="template-form-group">
-                        <div>
-                            <label for="templateItemName">Item Name:</label>
-                            <input type="text" id="templateItemName" required>
-                        </div>
-                        <div>
-                            <label for="templateStore">Store:</label>
-                            <select id="templateStore" required>
-                                <option value="Aldi - Wakefield">Aldi - Wakefield</option>
-                                <option value="Aldi - Batley">Aldi - Batley</option>
-                                <!-- Add more stores dynamically or hardcode -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="templateIsle">Aisle:</label>
-                            <input type="number" id="templateIsle" min="1">
-                        </div>
-                        <div>
-                            <label for="templatePosition">Position:</label>
-                            <input type="text" id="templatePosition" placeholder="e.g., A, B, C">
-                        </div>
-                        <div>
-                            <label for="templateSide">Side:</label>
-                            <select id="templateSide">
-                                <option value="">N/A</option>
-                                <option value="left">Left</option>
-                                <option value="right">Right</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="templatePrice">Price (£):</label>
-                            <input type="number" id="templatePrice" step="0.01">
-                        </div>
-                        <div>
-                            <label for="templatePickOrder">Pick Order:</label>
-                            <input type="number" id="templatePickOrder" min="1">
-                        </div>
-                    </div>
-                    <button type="submit">Add to Templates</button>
-                </form>
-            </div>
-
-            <div class="template-list">
-                <h3>Existing Item Templates (<span id="currentStoreName"></span>)</h3>
-                <div id="itemTemplates">
-                    <!-- Item templates will be rendered here -->
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>Shopping List</h1>
+      <button class="back-button" onclick="goBack()">Back to Home</button>
     </div>
 
-    <!-- Edit Item Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeEditModal()">&times;</span>
-            <h2>Edit Shopping Item</h2>
-            <form id="editForm">
-                <input type="hidden" id="editItemId">
-                <label for="editItemName">Item Name:</label>
-                <input type="text" id="editItemName" readonly>
-
-                <label for="editQuantity">Quantity:</label>
-                <input type="number" id="editQuantity" min="1" required>
-
-                <label for="editPrice">Price (£):</label>
-                <input type="number" id="editPrice" step="0.01">
-
-                <button type="submit">Update Item</button>
-            </form>
-        </div>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="shopping">Shopping List</button>
+      <button class="tab-button mobile-only" data-tab="mobile">Mobile View</button>
+      <button class="tab-button" data-tab="route">Shop Route</button>
+      <button class="tab-button" data-tab="templates">Item Templates</button>
     </div>
 
-    <!-- Edit Template Modal -->
-    <div id="editTemplateModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeEditTemplateModal()">&times;</span>
-            <h2>Edit Item Template</h2>
-            <form id="editTemplateForm">
-                <input type="hidden" id="editTemplateId">
-                <label for="editTemplateItemName">Item Name:</label>
-                <input type="text" id="editTemplateItemName" readonly>
-
-                <label for="editTemplateStore">Store:</label>
-                <select id="editTemplateStore" required>
-                    <option value="Aldi - Wakefield">Aldi - Wakefield</option>
-                    <option value="Aldi - Batley">Aldi - Batley</option>
-                    <!-- Add more stores dynamically or hardcode -->
-                </select>
-
-                <label for="editTemplateIsle">Aisle:</label>
-                <input type="number" id="editTemplateIsle" min="1">
-
-                <label for="editTemplatePosition">Position:</label>
-                <input type="text" id="editTemplatePosition" placeholder="e.g., A, B, C">
-
-                <label for="editTemplateSide">Side:</label>
-                <select id="editTemplateSide">
-                    <option value="">N/A</option>
-                    <option value="left">Left</option>
-                    <option value="right">Right</option>
-                </select>
-
-                <label for="editTemplatePrice">Price (£):</label>
-                <input type="number" id="editTemplatePrice" step="0.01">
-
-                <label for="editTemplatePickOrder">Pick Order:</label>
-                <input type="number" id="editTemplatePickOrder" min="1">
-
-                <button type="submit">Update Template</button>
-            </form>
+    <!-- Shopping List Tab (Desktop) -->
+    <div class="tab-content active" id="shopping-tab">
+      <form id="addItemForm">
+        <label for="itemName">Item Name:</label>
+        <div class="form-group">
+          <input type="text" id="itemName" placeholder="e.g., Apples" required />
+          <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
         </div>
+
+        <label for="itemDescription">Description (optional):</label>
+        <input type="text" id="itemDescription" placeholder="e.g., For curry, boneless" />
+
+        <label for="itemQty">Quantity:</label>
+        <input type="number" id="itemQty" placeholder="e.g., 2" min="1" value="1" required />
+
+        <button type="submit">Add Item</button>
+      </form>
+
+      <div id="shoppingListDisplay">
+        <h2>Your List</h2>
+        <div id="itemsContainer">
+          <p class="no-items">No items in your list yet. Add some above!</p>
+        </div>
+      </div>
+
+      <div class="cost-summary" id="costSummary" style="display: none;">
+        <h3>Cost Summary</h3>
+        <div class="cost-line">
+          <span>Unpurchased Items:</span>
+          <strong id="unpurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line">
+          <span>Purchased Items:</span>
+          <strong id="purchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line cost-total">
+          <span>Estimated Total:</span>
+          <strong id="totalCost">£0.00</strong>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="danger" onclick="clearAllPurchased()">Clear Purchased Items</button>
+        <button onclick="markAllPurchased()">Mark All as Purchased</button>
+      </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
-            authDomain: "teamdennisontracker.firebaseapp.com",
-            projectId: "teamdennisontracker",
-            storageBucket: "teamdennisontracker.firebasestorage.app",
-            messagingSenderId: "915336870349",
-            appId: "1:915336870349:web:c070e9b3fc0b689fe62c84"
-        };
+    <!-- Mobile View Tab -->
+    <div class="tab-content" id="mobile-tab">
+      <h2>Shopping Mode</h2>
+      <div id="mobileItemsContainer">
+        <p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>
+      </div>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+      <div class="cost-summary" id="mobileCostSummary" style="display: none;">
+        <h3>Cost Summary</h3>
+        <div class="cost-line">
+          <span>Unpurchased Items:</span>
+          <strong id="mobileUnpurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line">
+          <span>Purchased Items:</span>
+          <strong id="mobilePurchasedCost">£0.00</strong>
+        </div>
+        <div class="cost-line cost-total">
+          <span>Estimated Total:</span>
+          <strong id="mobileTotalCost">£0.00</strong>
+        </div>
+      </div>
 
-        // DOM Elements
-        const storeSelect = document.getElementById('storeSelect');
-        const currentStoreNameSpan = document.getElementById('currentStoreName');
-        const itemNameInput = document.getElementById('itemName');
-        const quantityInput = document.getElementById('quantity');
-        const addItemForm = document.getElementById('addItemForm');
-        const shoppingListItemsDiv = document.getElementById('shoppingListItems');
-        const costSummary = document.getElementById('costSummary');
-        const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+      <div class="action-buttons" style="margin-top: 20px;">
+        <button class="danger" onclick="clearAllPurchased()">Clear Purchased</button>
+      </div>
+    </div>
 
-        const floorPlanCanvas = document.getElementById('floorPlanCanvas');
-        const shoppingRouteList = document.getElementById('shoppingRouteList');
+    <!-- Shop Route Tab -->
+    <div class="tab-content" id="route-tab">
+      <h2>Your Shopping Route</h2>
+      <div class="floor-plan-container">
+        <canvas id="floorPlanCanvas" class="floor-plan-canvas"></canvas>
+      </div>
+      <div class="route-guide" id="routeGuideContainer">
+        <h3>Shopping Sequence</h3>
+        <div id="routeGuideItems">
+          <p class="no-items">Add items to your list to see your route</p>
+        </div>
+      </div>
+    </div>
 
-        const templateItemNameInput = document.getElementById('templateItemName');
-        const templateStoreSelect = document.getElementById('templateStore');
-        const templateIsleInput = document.getElementById('templateIsle');
-        const templatePositionInput = document.getElementById('templatePosition');
-        const templateSideSelect = document.getElementById('templateSide');
-        const templatePriceInput = document.getElementById('templatePrice');
-        const templatePickOrderInput = document.getElementById('templatePickOrder');
-        const addTemplateForm = document.getElementById('addTemplateForm');
-        const itemTemplatesDiv = document.getElementById('itemTemplates');
+    <!-- Item Templates Tab -->
+    <div class="tab-content" id="templates-tab">
+      <h2>Manage Item Templates</h2>
+      <p style="color: #666; margin-bottom: 20px;">Set up your item locations and prices here once. When you add items to your shopping list, they'll automatically use these details.</p>
+      
+      <div class="template-form-section">
+        <h3>Add New Template</h3>
+        <form id="addTemplateForm">
+          <label for="templateItemName">Item Name:</label>
+          <input type="text" id="templateItemName" placeholder="e.g., Apples" required />
 
-        const editModal = document.getElementById('editModal');
-        const editForm = document.getElementById('editForm');
-        const editItemIdInput = document.getElementById('editItemId');
-        const editItemNameInput = document.getElementById('editItemName');
-        const editQuantityInput = document.getElementById('editQuantity');
-        const editPriceInput = document.getElementById('editPrice');
+          <div class="form-row">
+            <div>
+              <label for="templateIsle">Isle:</label>
+              <input type="number" id="templateIsle" placeholder="e.g., 1" required />
+            </div>
+            <div>
+              <label for="templatePosition">Position:</label>
+              <select id="templatePosition" required>
+                <option value="">Select Position</option>
+                <option value="Start">Start</option>
+                <option value="Middle">Middle</option>
+                <option value="End">End</option>
+              </select>
+            </div>
+            <div>
+              <label for="templateSide">Side:</label>
+              <select id="templateSide" required>
+                <option value="">Select Side</option>
+                <option value="Left">Left</option>
+                <option value="Right">Right</option>
+                <option value="End">End</option>
+              </select>
+            </div>
+          </div>
 
-        const editTemplateModal = document.getElementById('editTemplateModal');
-        const editTemplateForm = document.getElementById('editTemplateForm');
-        const editTemplateIdInput = document.getElementById('editTemplateId');
-        const editTemplateItemNameInput = document.getElementById('editTemplateItemName');
-        const editTemplateStoreSelect = document.getElementById('editTemplateStore');
-        const editTemplateIsleInput = document.getElementById('editTemplateIsle');
-        const editTemplatePositionInput = document.getElementById('editTemplatePosition');
-        const editTemplateSideSelect = document.getElementById('editTemplateSide');
-        const editTemplatePriceInput = document.getElementById('editTemplatePrice');
-        const editTemplatePickOrderInput = document.getElementById('editTemplatePickOrder');
+          <div class="form-row">
+            <div>
+              <label for="templatePrice">Price (per unit):</label>
+              <input type="number" id="templatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+            </div>
+            <div>
+              <label for="templatePickOrder">Pick Order:</label>
+              <input type="number" id="templatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." required />
+            </div>
+          </div>
 
+          <button type="submit">Add Template</button>
+        </form>
+      </div>
 
-        let selectedStore = localStorage.getItem('selectedStore') || 'Aldi - Wakefield'; // Default to Aldi - Wakefield
-        storeSelect.value = selectedStore;
-        currentStoreNameSpan.textContent = selectedStore; // Update the span on templates tab
+      <h3>Your Templates</h3>
+      <div id="templatesContainer">
+        <p class="no-items">No item templates yet. Add one above!</p>
+      </div>
+    </div>
+  </div>
 
-        let allShoppingItems = [];
-        let allTemplates = [];
+  <!-- Edit Item Modal (simplified for shopping list items) -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div class="modal-header">Edit Item</div>
+      <form id="editForm">
+        <label for="editItemName">Item Name:</label>
+        <input type="text" id="editItemName" disabled />
 
-        // --- Store Selection Logic ---
-        storeSelect.addEventListener('change', (e) => {
-            selectedStore = e.target.value;
-            localStorage.setItem('selectedStore', selectedStore);
-            currentStoreNameSpan.textContent = selectedStore; // Update the span
-            // Re-fetch data for the new store
-            fetchShoppingList();
-            fetchItemTemplates();
+        <label for="editItemDescription">Description (optional):</label>
+        <input type="text" id="editItemDescription" />
+
+        <label for="editItemQty">Quantity:</label>
+        <input type="number" id="editItemQty" min="1" required />
+
+        <div class="modal-buttons">
+          <button type="button" class="cancel-button" id="cancelEditButton">Cancel</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Template Modal -->
+  <div id="editTemplateModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div class="modal-header">Edit Template</div>
+      <form id="editTemplateForm">
+        <label for="editTemplateItemName">Item Name:</label>
+        <input type="text" id="editTemplateItemName" disabled />
+
+        <label for="editTemplateIsle">Isle:</label>
+        <input type="number" id="editTemplateIsle" required />
+
+        <label for="editTemplatePosition">Position:</label>
+        <select id="editTemplatePosition" required>
+          <option value="">Select Position</option>
+          <option value="Start">Start</option>
+          <option value="Middle">Middle</option>
+          <option value="End">End</option>
+        </select>
+
+        <label for="editTemplateSide">Side:</label>
+        <select id="editTemplateSide" required>
+          <option value="">Select Side</option>
+          <option value="Left">Left</option>
+          <option value="Right">Right</option>
+          <option value="End">End</option>
+        </select>
+
+        <label for="editTemplatePrice">Price (per unit):</label>
+        <input type="number" id="editTemplatePrice" step="0.01" min="0" placeholder="e.g., 2.50" />
+
+        <label for="editTemplatePickOrder">Pick Order:</label>
+        <input type="number" id="editTemplatePickOrder" min="1" placeholder="e.g., 1, 2, 3..." required />
+
+        <div class="modal-buttons">
+          <button type="button" class="cancel-button" id="cancelEditTemplateButton">Cancel</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+      authDomain: "teamdennisontracker.firebaseapp.com",
+      projectId: "teamdennisontracker",
+      storageBucket: "teamdennisontracker.firebasestorage.app",
+      messagingSenderId: "915336870349",
+      appId: "1:915336870349:web:c070e9b3fc0b689fe62c84"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Back button function
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabName = button.dataset.tab;
+        
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        button.classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+        
+        if (tabName === 'route') {
+          setTimeout(() => drawFloorPlan(), 100); 
+        }
+      });
+    });
+
+    // Modal setup
+    const editModal = document.getElementById('editModal');
+    const editTemplateModal = document.getElementById('editTemplateModal');
+    const modalClose = document.querySelectorAll('.modal-close');
+    const cancelEditButton = document.getElementById('cancelEditButton');
+    const cancelEditTemplateButton = document.getElementById('cancelEditTemplateButton');
+    let editingItemId = null;
+    let editingTemplateId = null;
+
+    modalClose.forEach(close => {
+      close.addEventListener('click', () => {
+        editModal.classList.remove('show');
+        editTemplateModal.classList.remove('show');
+      });
+    });
+
+    cancelEditButton.addEventListener('click', () => {
+      editModal.classList.remove('show');
+    });
+
+    cancelEditTemplateButton.addEventListener('click', () => {
+      editTemplateModal.classList.remove('show');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === editModal) {
+        editModal.classList.remove('show');
+      }
+      if (e.target === editTemplateModal) {
+        editTemplateModal.classList.remove('show');
+      }
+    });
+
+    // Elements
+    const addItemForm = document.getElementById('addItemForm');
+    const addTemplateForm = document.getElementById('addTemplateForm');
+    const itemNameInput = document.getElementById('itemName');
+    const itemDescriptionInput = document.getElementById('itemDescription');
+    const itemQtyInput = document.getElementById('itemQty');
+    const itemsContainer = document.getElementById('itemsContainer');
+    const mobileItemsContainer = document.getElementById('mobileItemsContainer');
+    const templatesContainer = document.getElementById('templatesContainer');
+    const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+    const floorPlanCanvas = document.getElementById('floorPlanCanvas');
+    const costSummary = document.getElementById('costSummary');
+
+    let allShoppingItems = [];
+    let allTemplates = [];
+
+    // Fetch all templates for autocomplete
+    db.collection('itemTemplates').onSnapshot((snapshot) => {
+      allTemplates = [];
+      snapshot.forEach((doc) => {
+        allTemplates.push({ id: doc.id, ...doc.data() });
+      });
+      renderTemplates();
+      renderShoppingList(allShoppingItems);
+      renderMobileView(allShoppingItems);
+      renderRouteGuide(allShoppingItems);
+      if (document.getElementById('route-tab').classList.contains('active')) {
+        drawFloorPlan();
+      }
+    });
+
+    // Autocomplete functionality
+    itemNameInput.addEventListener('input', (e) => {
+      const value = e.target.value.toLowerCase().trim();
+      autocompleteSuggestions.innerHTML = '';
+
+      if (value.length === 0) {
+        return;
+      }
+
+      const matches = allTemplates.filter(template =>
+        template.name.toLowerCase().includes(value)
+      );
+
+      if (matches.length === 0) {
+        return;
+      }
+
+      matches.slice(0, 5).forEach(template => {
+        const suggestionDiv = document.createElement('div');
+        suggestionDiv.classList.add('autocomplete-item');
+        suggestionDiv.textContent = template.name;
+        suggestionDiv.addEventListener('click', () => {
+          itemNameInput.value = template.name;
+          itemDescriptionInput.value = '';
+          itemQtyInput.value = 1;
+          autocompleteSuggestions.innerHTML = '';
+          itemNameInput.focus();
+        });
+        autocompleteSuggestions.appendChild(suggestionDiv);
+      });
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target !== itemNameInput) {
+        autocompleteSuggestions.innerHTML = '';
+      }
+    });
+
+    // Function to add a new item
+    addItemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const itemName = itemNameInput.value.trim();
+      const itemDescription = itemDescriptionInput.value.trim();
+      const itemQty = parseInt(itemQtyInput.value);
+
+      if (!itemName || isNaN(itemQty) || itemQty < 1) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      const template = allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
+
+      if (!template) {
+        alert('This item does not exist in your templates. Please add it to Item Templates first.');
+        return;
+      }
+
+      try {
+        await db.collection('shoppingList').add({
+          name: itemName,
+          description: itemDescription,
+          qty: itemQty,
+          purchased: false,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Initialize fetches on page load
-        fetchShoppingList();
-        fetchItemTemplates();
+        addItemForm.reset();
+        itemQtyInput.value = 1;
+        itemNameInput.focus();
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        alert("Failed to add item. Please try again.");
+      }
+    });
 
-        function goBack() {
-            window.location.href = "index.html"; // Assuming index.html is your home page
-        }
+    // Add template form
+    addTemplateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        // --- Tab Switching Logic ---
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
+      const templateName = document.getElementById('templateItemName').value.trim();
+      const templateIsle = parseInt(document.getElementById('templateIsle').value);
+      const templatePosition = document.getElementById('templatePosition').value;
+      const templateSide = document.getElementById('templateSide').value;
+      const templatePrice = parseFloat(document.getElementById('templatePrice').value) || 0;
+      const templatePickOrder = parseInt(document.getElementById('templatePickOrder').value);
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tabName = button.dataset.tab;
+      if (!templateName || isNaN(templateIsle) || !templatePosition || !templateSide || isNaN(templatePickOrder)) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
 
-                tabButtons.forEach(b => b.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
+      const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
+      if (existingTemplate) {
+        alert('This item template already exists!');
+        return;
+      }
 
-                button.classList.add('active');
-                document.getElementById(`${tabName}-tab`).classList.add('active');
-
-                // Special handling for the route tab to ensure canvas draws correctly
-                if (tabName === 'route') {
-                    // Timeout to ensure canvas element is visible and sized correctly before drawing
-                    setTimeout(() => {
-                        drawFloorPlan();
-                        renderRouteGuide(allShoppingItems); // Also re-render route guide
-                    }, 100);
-                } else if (tabName === 'templates') {
-                    // Update template store dropdowns on tab switch, if new stores are added
-                    populateStoreDropdowns();
-                }
-            });
+      try {
+        await db.collection('itemTemplates').add({
+          name: templateName,
+          isle: templateIsle,
+          position: templatePosition,
+          side: templateSide,
+          price: templatePrice,
+          pickOrder: templatePickOrder
         });
 
-        function populateStoreDropdowns() {
-            // Get all unique store names from existing templates if needed
-            // Or just ensure the default options are correct
-            const stores = [...new Set(Array.from(storeSelect.options).map(opt => opt.value))];
+        addTemplateForm.reset();
+        document.getElementById('templateItemName').focus();
+        alert('Template added successfully!');
+      } catch (error) {
+        console.error("Error adding template: ", error);
+        alert("Failed to add template. Please try again.");
+      }
+    });
 
-            const updateSelect = (selectElement) => {
-                selectElement.innerHTML = ''; // Clear existing options
-                stores.forEach(store => {
-                    const option = document.createElement('option');
-                    option.value = store;
-                    option.textContent = store;
-                    selectElement.appendChild(option);
-                });
-                selectElement.value = selectedStore; // Set to current selected store
-            };
+    // Helper function to get template data for a shopping item
+    function getTemplateForItem(itemName) {
+      return allTemplates.find(t => t.name.toLowerCase() === itemName.toLowerCase());
+    }
 
-            updateSelect(templateStoreSelect);
-            updateSelect(editTemplateStoreSelect);
+    // Calculate costs
+    function calculateCosts() {
+      let unpurchasedTotal = 0;
+      let purchasedTotal = 0;
+
+      allShoppingItems.forEach(item => {
+        const template = getTemplateForItem(item.name);
+        const price = template ? (template.price || 0) : 0;
+        const itemTotal = price * item.qty;
+
+        if (item.purchased) {
+          purchasedTotal += itemTotal;
+        } else {
+          unpurchasedTotal += itemTotal;
         }
-        populateStoreDropdowns(); // Call on initial load
+      });
 
-        // --- Firebase Data Fetching ---
+      const totalCost = unpurchasedTotal + purchasedTotal;
 
-        // Fetch Shopping List Items for the selected store
-        function fetchShoppingList() {
-            db.collection('shoppingList')
-              .where('store', '==', selectedStore)
-              .orderBy('pickOrder', 'asc') // Order by pick order
-              .onSnapshot((snapshot) => {
-                  allShoppingItems = [];
-                  snapshot.forEach((doc) => {
-                      allShoppingItems.push({ id: doc.id, ...doc.data() });
-                  });
-                  renderShoppingList(allShoppingItems);
-                  // renderMobileView(allShoppingItems); // Commented out as this wasn't defined in the original file
-                  renderRouteGuide(allShoppingItems);
-                  // Only draw floor plan if route tab is active and shopping list items exist
-                  if (document.getElementById('route-tab').classList.contains('active')) {
-                      setTimeout(() => drawFloorPlan(), 100);
-                  }
-              }, (error) => {
-                  console.error("Error fetching shopping list: ", error);
-              });
+      document.getElementById('unpurchasedCost').textContent = '£' + unpurchasedTotal.toFixed(2);
+      document.getElementById('purchasedCost').textContent = '£' + purchasedTotal.toFixed(2);
+      document.getElementById('totalCost').textContent = '£' + totalCost.toFixed(2);
+
+      document.getElementById('mobileUnpurchasedCost').textContent = '£' + unpurchasedTotal.toFixed(2);
+      document.getElementById('mobilePurchasedCost').textContent = '£' + purchasedTotal.toFixed(2);
+      document.getElementById('mobileTotalCost').textContent = '£' + totalCost.toFixed(2);
+
+      const mobileCostSummary = document.getElementById('mobileCostSummary');
+      if (allShoppingItems.length > 0) {
+        costSummary.style.display = 'block';
+        mobileCostSummary.style.display = 'block';
+      } else {
+        costSummary.style.display = 'none';
+        mobileCostSummary.style.display = 'none';
+      }
+    }
+
+    // Function to render the shopping list
+    const renderShoppingList = (items) => {
+      itemsContainer.innerHTML = '';
+
+      if (items.length === 0) {
+        itemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some above!</p>';
+        costSummary.style.display = 'none';
+        return;
+      }
+
+      const positionOrder = {
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
+      };
+
+      items.sort((a, b) => {
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
+
+        if (!templateA || !templateB) return 0;
+
+        if (a.purchased !== b.purchased) {
+            return a.purchased - b.purchased;
+        }
+        if (templateA.isle !== templateB.isle) {
+          return templateA.isle - templateB.isle;
+        }
+        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+          return positionOrder[templateA.position] - positionOrder[templateB.position];
+        }
+        const pickOrderA = templateA.pickOrder || 1;
+        const pickOrderB = templateB.pickOrder || 1;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
+        }
+        if (templateA.side !== templateB.side) {
+            return templateA.side.localeCompare(templateB.side);
+        }
+        return 0;
+      });
+
+      items.forEach(item => {
+        const template = getTemplateForItem(item.name);
+        
+        if (!template) {
+          return;
         }
 
-        // Fetch Item Templates for the selected store
-        function fetchItemTemplates() {
-            db.collection('itemTemplates')
-              .where('store', '==', selectedStore) // Filter by the currently selected store
-              .orderBy('name', 'asc')
-              .onSnapshot((snapshot) => {
-                  allTemplates = [];
-                  snapshot.forEach((doc) => {
-                      allTemplates.push({ id: doc.id, ...doc.data() });
-                  });
-                  renderTemplates();
-                  updateAutocomplete(allTemplates);
-              }, (error) => {
-                  console.error("Error fetching item templates: ", error);
-              });
+        const price = template.price || 0;
+        const itemTotal = (price * item.qty).toFixed(2);
+
+        const itemCard = document.createElement('div');
+        itemCard.classList.add('item-card');
+        if (item.purchased) {
+            itemCard.classList.add('purchased');
         }
+        itemCard.innerHTML = `
+          <div class="item-info">
+            <strong>${item.name}</strong>
+            ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
+            <small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>
+          </div>
+          <div class="item-qty">${item.qty}x</div>
+          <div class="item-price">£${itemTotal}</div>
+          <div class="qty-controls">
+            <button class="qty-decrease-button" data-id="${item.id}" type="button">-</button>
+            <button class="qty-increase-button" data-id="${item.id}" type="button">+</button>
+          </div>
+          <div class="actions">
+            <button class="purchased-button" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
+                ${item.purchased ? 'Unmark' : 'Purchased'}
+            </button>
+            <button class="edit-button" data-id="${item.id}" data-name="${item.name}" type="button">Edit</button>
+            <button class="delete-button" data-id="${item.id}" type="button">Delete</button>
+          </div>
+        `;
+        itemsContainer.appendChild(itemCard);
+      });
+
+      calculateCosts();
+    };
+
+// Function to render mobile view
+const renderMobileView = (items) => {
+  mobileItemsContainer.innerHTML = '';
+
+  if (items.length === 0) {
+    mobileItemsContainer.innerHTML = '<p class="no-items">No items in your list yet. Add some on the Shopping List tab!</p>';
+    return;
+  }
+
+  const positionOrder = {
+    "Start": 1,
+    "Middle": 2,
+    "End": 3
+  };
+
+  items.sort((a, b) => {
+    const templateA = getTemplateForItem(a.name);
+    const templateB = getTemplateForItem(b.name);
+
+    if (!templateA || !templateB) return 0;
+
+    if (a.purchased !== b.purchased) {
+        return a.purchased - b.purchased;
+    }
+    if (templateA.isle !== templateB.isle) {
+      return templateA.isle - templateB.isle;
+    }
+    if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+      return positionOrder[templateA.position] - positionOrder[templateB.position];
+    }
+    const pickOrderA = templateA.pickOrder || 1;
+    const pickOrderB = templateB.pickOrder || 1;
+    if (pickOrderA !== pickOrderB) {
+      return pickOrderA - pickOrderB;
+    }
+    if (templateA.side !== templateB.side) {
+        return templateA.side.localeCompare(templateB.side);
+    }
+    return 0;
+  });
+
+  items.forEach(item => {
+    const template = getTemplateForItem(item.name);
+    
+    if (!template) {
+      return;
+    }
+
+    const price = template.price || 0;
+    const itemTotal = (price * item.qty).toFixed(2);
+
+    const mobileCard = document.createElement('div');
+    mobileCard.classList.add('mobile-item-card');
+    if (item.purchased) {
+        mobileCard.classList.add('purchased');
+    }
+    mobileCard.innerHTML = `
+      <div class="mobile-item-header">
+        <span class="mobile-item-name">${item.name}</span>
+        <span class="mobile-item-qty">${item.qty}x</span>
+        <span class="mobile-item-price">£${itemTotal}</span>
+      </div>
+      ${item.description ? `<div class="mobile-item-description">${item.description}</div>` : ''}
+      <button class="mobile-purchased-button ${item.purchased ? 'is-purchased' : ''}" data-id="${item.id}" data-purchased="${item.purchased}" type="button">
+        ${item.purchased ? 'Undo' : 'Got It'}
+      </button>
+    `;
+    mobileItemsContainer.appendChild(mobileCard);
+  });
+};
 
 
-        // --- Autocomplete Logic ---
-        itemNameInput.addEventListener('input', (e) => {
-            const value = e.target.value.toLowerCase().trim();
-            autocompleteSuggestions.innerHTML = '';
+    // Function to render templates
+    const renderTemplates = () => {
+      templatesContainer.innerHTML = '';
 
-            if (value.length === 0) {
-                return;
-            }
+      if (allTemplates.length === 0) {
+        templatesContainer.innerHTML = '<p class="no-items">No item templates yet. Add one above!</p>';
+        return;
+      }
 
-            const filteredTemplates = allTemplates.filter(template =>
-                template.name.toLowerCase().includes(value)
-            );
+      allTemplates.sort((a, b) => a.name.localeCompare(b.name));
 
-            filteredTemplates.forEach(template => {
-                const div = document.createElement('div');
-                div.textContent = template.name;
-                div.addEventListener('click', () => {
-                    itemNameInput.value = template.name;
-                    autocompleteSuggestions.innerHTML = '';
-                    // Automatically populate quantity to 1 when template is selected
-                    quantityInput.value = 1;
-                });
-                autocompleteSuggestions.appendChild(div);
-            });
+      allTemplates.forEach(template => {
+        const templateCard = document.createElement('div');
+        templateCard.classList.add('template-card');
+        templateCard.innerHTML = `
+          <div class="info">
+            <strong>${template.name}</strong> <br>
+            Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1}) <br>
+            <small>Price: £${(template.price || 0).toFixed(2)} per unit</small>
+          </div>
+          <div>
+            <button class="edit-button" data-id="${template.id}" data-name="${template.name}" type="button">Edit</button>
+            <button class="delete-button" data-id="${template.id}" type="button">Delete</button>
+          </div>
+        `;
+        templatesContainer.appendChild(templateCard);
+      });
+    };
+
+    // Real-time listener for shopping list
+    db.collection('shoppingList').orderBy('timestamp', 'asc')
+      .onSnapshot((snapshot) => {
+        allShoppingItems = [];
+        snapshot.forEach((doc) => {
+          allShoppingItems.push({ id: doc.id, ...doc.data() });
+        });
+        renderShoppingList(allShoppingItems);
+        renderMobileView(allShoppingItems);
+        renderRouteGuide(allShoppingItems);
+        if (document.getElementById('route-tab').classList.contains('active')) {
+            drawFloorPlan();
+        }
+      }, (error) => {
+        console.error("Error fetching shopping list: ", error);
+      });
+
+    // Floor Plan Drawing Function
+    function drawFloorPlan() {
+      const canvas = floorPlanCanvas;
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = canvas.offsetWidth;
+      canvas.height = Math.max(400, canvas.offsetWidth * 0.6);
+
+      const padding = 40;
+      const width = canvas.width - 2 * padding;
+      const height = canvas.height - 2 * padding;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Store outline
+      ctx.strokeStyle = '#0055a5';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(padding, padding, width, height);
+
+      // Define aisles with their configuration
+      const aisles = [
+        { number: 5, direction: 'UP' },
+        { number: 4, direction: 'DOWN' },
+        { number: 3, direction: 'UP' },
+        { number: 2, direction: 'DOWN' },
+        { number: 1, direction: 'UP' }
+      ];
+
+      const numAisles = aisles.length;
+      const aisleGap = 15;
+      const totalAisleWidth = width - (numAisles - 1) * aisleGap;
+      const individualAisleWidth = totalAisleWidth / numAisles;
+
+      const aisleXStarts = [];
+      for (let i = 0; i < numAisles; i++) {
+        aisleXStarts.push(padding + i * (individualAisleWidth + aisleGap));
+      }
+
+      // Draw each aisle as a distinct rectangle
+      aisleXStarts.forEach((xStart, i) => {
+        const aisleInfo = aisles[i];
+        const xCenter = xStart + individualAisleWidth / 2;
+
+        // Draw aisle background
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(xStart, padding, individualAisleWidth, height);
+
+        // Draw aisle number as a distinct rectangle
+        const numMarkerWidth = 30;
+        const numMarkerHeight = 24;
+        const numMarkerX = xCenter - numMarkerWidth / 2;
+        const numMarkerY = padding - numMarkerHeight - 5;
+
+        ctx.fillStyle = '#a6d9f5';
+        ctx.strokeStyle = '#0055a5';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(numMarkerX, numMarkerY, numMarkerWidth, numMarkerHeight);
+        ctx.strokeRect(numMarkerX, numMarkerY, numMarkerWidth, numMarkerHeight);
+
+        ctx.fillStyle = '#0055a5';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(aisleInfo.number, xCenter, numMarkerY + numMarkerHeight / 2);
+
+        // Draw direction arrow in center of aisle
+        ctx.strokeStyle = '#0055a5';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        if (aisleInfo.direction === 'UP') {
+          const arrowBaseY = padding + height * 0.7;
+          const arrowTopY = padding + height * 0.3;
+          ctx.moveTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter - 6, arrowTopY + 8);
+          ctx.moveTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter + 6, arrowTopY + 8);
+        } else {
+          const arrowTopY = padding + height * 0.3;
+          const arrowBaseY = padding + height * 0.7;
+          ctx.moveTo(xCenter, arrowTopY);
+          ctx.lineTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter - 6, arrowBaseY - 8);
+          ctx.moveTo(xCenter, arrowBaseY);
+          ctx.lineTo(xCenter + 6, arrowBaseY - 8);
+        }
+        ctx.stroke();
+      });
+
+      // Draw distinct separation lines between aisles
+      for (let i = 0; i < numAisles - 1; i++) {
+        const separatorX = aisleXStarts[i] + individualAisleWidth + aisleGap / 2;
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(separatorX, padding);
+        ctx.lineTo(separatorX, padding + height);
+        ctx.stroke();
+      }
+
+      // Entry point (bottom center of Isle 1)
+      const entryAisleIndex = aisles.findIndex(a => a.number === 1);
+      const entryX = aisleXStarts[entryAisleIndex] + individualAisleWidth / 2;
+      const entryY = padding + height + 20;
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(entryX, entryY, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 12px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('ENTRY', entryX, entryY + 12);
+      
+      // Get unpurchased items
+      const unpurchasedItems = allShoppingItems.filter(item => !item.purchased && getTemplateForItem(item.name));
+
+      if (unpurchasedItems.length === 0) {
+        ctx.fillStyle = '#999';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('No items to shop for', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      // Sort items for routing
+      const positionOrder = { "Start": 1, "Middle": 2, "End": 3 };
+      unpurchasedItems.sort((a, b) => {
+          const templateA = getTemplateForItem(a.name);
+          const templateB = getTemplateForItem(b.name);
+
+          if (templateA.isle !== templateB.isle) return templateA.isle - templateB.isle;
+          if (positionOrder[templateA.position] !== positionOrder[templateB.position]) return positionOrder[templateA.position] - positionOrder[templateB.position];
+          const pickOrderA = templateA.pickOrder || 1;
+          const pickOrderB = templateB.pickOrder || 1;
+          if (pickOrderA !== pickOrderB) return pickOrderA - pickOrderB;
+          if (templateA.side !== templateB.side) return templateA.side.localeCompare(templateB.side);
+          return 0;
+      });
+
+      // Plot items on the map
+      const itemPositions = [];
+      
+      unpurchasedItems.forEach((item, index) => {
+        const template = getTemplateForItem(item.name);
+        const aisleConfig = aisles.find(aisle => aisle.number === template.isle);
+        
+        if (aisleConfig) {
+          const aisleIndex = aisles.findIndex(aisle => aisle.number === template.isle);
+          const xStart = aisleXStarts[aisleIndex];
+          const xCenter = xStart + individualAisleWidth / 2;
+          const direction = aisleConfig.direction;
+          
+          // Determine X position based on side
+          let itemX;
+          
+          let sideToUse = template.side;
+          if (direction === 'DOWN' && template.side !== 'End') {
+            sideToUse = template.side === 'Left' ? 'Right' : 'Left';
+          }
+          
+          if (sideToUse === 'Left') {
+              itemX = xStart + (individualAisleWidth * 0.25);
+          } else if (sideToUse === 'Right') {
+              itemX = xStart + (individualAisleWidth * 0.75);
+          } else {
+              itemX = xCenter;
+          }
+
+          // Determine Y position based on position in aisle and direction
+          let itemY;
+          if (template.position === 'Start') {
+            itemY = (direction === 'UP') ? (padding + height - 20) : (padding + 20);
+          } else if (template.position === 'Middle') {
+            itemY = padding + height / 2;
+          } else {
+            itemY = (direction === 'UP') ? (padding + 20) : (padding + height - 20);
+          }
+          
+          itemPositions.push({ x: itemX, y: itemY, index: index });
+        }
+      });
+
+      // Draw path connecting items
+      if (itemPositions.length > 0) {
+        ctx.strokeStyle = '#28a745';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(entryX, entryY);
+        
+        itemPositions.forEach(pos => {
+          ctx.lineTo(pos.x, pos.y);
+        });
+        
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Draw item circles
+      itemPositions.forEach(pos => {
+        ctx.fillStyle = '#0055a5';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pos.index + 1, pos.x, pos.y);
+      });
+
+      if (!window.floorPlanResizeListener) {
+        window.floorPlanResizeListener = true;
+        window.addEventListener('resize', () => {
+          if (document.getElementById('route-tab').classList.contains('active')) {
+            setTimeout(() => drawFloorPlan(), 100);
+          }
+        });
+      }
+    }
+
+    // Route Guide Function
+    function renderRouteGuide(items) {
+      const routeGuideItems = document.getElementById('routeGuideItems');
+      routeGuideItems.innerHTML = '';
+
+      const unpurchasedItems = items.filter(item => !item.purchased && getTemplateForItem(item.name));
+
+      if (unpurchasedItems.length === 0) {
+        routeGuideItems.innerHTML = '<p class="no-items">No items in your list. Add items to see your route!</p>';
+        return;
+      }
+
+      const positionOrder = {
+        "Start": 1,
+        "Middle": 2,
+        "End": 3
+      };
+
+      unpurchasedItems.sort((a, b) => {
+        const templateA = getTemplateForItem(a.name);
+        const templateB = getTemplateForItem(b.name);
+
+        if (templateA.isle !== templateB.isle) {
+          return templateA.isle - templateB.isle;
+        }
+        if (positionOrder[templateA.position] !== positionOrder[templateB.position]) {
+          return positionOrder[templateA.position] - positionOrder[templateB.position];
+        }
+        const pickOrderA = templateA.pickOrder || 1;
+        const pickOrderB = templateB.pickOrder || 1;
+        if (pickOrderA !== pickOrderB) {
+          return pickOrderA - pickOrderB;
+        }
+        if (templateA.side !== templateB.side) {
+            return templateA.side.localeCompare(templateB.side);
+        }
+        return 0;
+      });
+
+      unpurchasedItems.forEach((item, index) => {
+        const template = getTemplateForItem(item.name);
+        const price = template ? (template.price || 0) : 0;
+        const itemTotal = (price * item.qty).toFixed(2);
+
+        const routeItem = document.createElement('div');
+        routeItem.classList.add('route-item');
+        routeItem.innerHTML = `
+          <div class="route-number">${index + 1}</div>
+          <div class="route-details">
+            <strong>${item.name} (x${item.qty}) - £${itemTotal}</strong>
+            ${item.description ? `<span class="route-description">${item.description}</span>` : ''}
+            <small>Isle ${template.isle}, ${template.position}, ${template.side} (Pick Order: ${template.pickOrder || 1})</small>
+          </div>
+        `;
+        routeGuideItems.appendChild(routeItem);
+      });
+    }
+
+    // Clear all purchased items
+    async function clearAllPurchased() {
+      if (!confirm('Are you sure you want to delete all purchased items?')) {
+        return;
+      }
+
+      try {
+        const purchasedItems = allShoppingItems.filter(item => item.purchased);
+        if (purchasedItems.length === 0) {
+            alert('No purchased items to clear!');
+            return;
+        }
+        const batch = db.batch();
+
+        purchasedItems.forEach(item => {
+          batch.delete(db.collection('shoppingList').doc(item.id));
         });
 
-        // Hide autocomplete suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!itemNameInput.contains(e.target) && !autocompleteSuggestions.contains(e.target)) {
-                autocompleteSuggestions.innerHTML = '';
-            }
+        await batch.commit();
+        alert('All purchased items cleared!');
+      } catch (error) {
+        console.error("Error clearing purchased items: ", error);
+        alert("Failed to clear purchased items. Please try again.");
+      }
+    }
+
+    // Mark all as purchased
+    async function markAllPurchased() {
+      if (!confirm('Mark all items as purchased?')) {
+        return;
+      }
+
+      try {
+        const unpurchasedItems = allShoppingItems.filter(item => !item.purchased);
+        if (unpurchasedItems.length === 0) {
+            alert('All items are already purchased!');
+            return;
+        }
+        const batch = db.batch();
+
+        unpurchasedItems.forEach(item => {
+          batch.update(db.collection('shoppingList').doc(item.id), {
+            purchased: true
+          });
         });
 
-        // --- Shopping List Item Management ---
-        addItemForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const itemName = itemNameInput.value.trim();
-            const quantity = parseInt(quantityInput.value, 10);
+        await batch.commit();
+        alert('All items marked as purchased!');
+      } catch (error) {
+        console.error("Error marking items as purchased: ", error);
+        alert("Failed to mark items as purchased. Please try again.");
+      }
+    }
 
-            if (!itemName || isNaN(quantity) || quantity <= 0) {
-                alert('Please enter a valid item name and quantity.');
-                return;
-            }
+    // Update quantity
+    async function updateQuantity(itemId, increment) {
+      const item = allShoppingItems.find(i => i.id === itemId);
+      if (!item) return;
 
-            // Check if item already exists in the shopping list for the current store
-            const existingItem = allShoppingItems.find(item => item.name.toLowerCase() === itemName.toLowerCase() && item.store === selectedStore);
+      let newQty = item.qty + (increment ? 1 : -1);
+      if (newQty < 1) newQty = 1;
 
-            if (existingItem) {
-                // Update quantity if item exists
-                await db.collection('shoppingList').doc(existingItem.id).update({
-                    quantity: existingItem.quantity + quantity
-                });
-            } else {
-                // Add new item
-                const template = getTemplateForItem(itemName);
-                await db.collection('shoppingList').add({
-                    name: itemName,
-                    quantity: quantity,
-                    checked: false,
-                    store: selectedStore, // Associate with the current store
-                    isle: template ? template.isle : null,
-                    position: template ? template.position : null,
-                    side: template ? template.side : null,
-                    price: template ? template.price : null,
-                    pickOrder: template ? template.pickOrder : 9999 // Default if no template
-                });
-            }
-
-            itemNameInput.value = '';
-            quantityInput.value = '1';
-            autocompleteSuggestions.innerHTML = ''; // Clear suggestions
+      try {
+        await db.collection('shoppingList').doc(itemId).update({
+          qty: newQty
         });
+      } catch (error) {
+        console.error("Error updating quantity: ", error);
+        alert("Failed to update quantity. Please try again.");
+      }
+    }
 
-        function renderShoppingList(items) {
-            shoppingListItemsDiv.innerHTML = '';
-            let totalCost = 0;
-
-            if (items.length === 0) {
-                shoppingListItemsDiv.innerHTML = '<p>Your shopping list is empty.</p>';
-                costSummary.textContent = 'Total: £0.00';
-                return;
-            }
-
-            items.forEach(item => {
-                const itemElement = document.createElement('div');
-                itemElement.classList.add('shopping-list-item');
-                if (item.checked) {
-                    itemElement.classList.add('checked');
-                }
-
-                const itemDetails = `
-                    <div class="item-details">
-                        <strong>${item.name}</strong>
-                        <span>Qty: ${item.quantity}</span>
-                        ${item.isle ? `<span>Aisle: ${item.isle}${item.position ? ` (${item.position})` : ''}${item.side ? ` - ${item.side}` : ''}</span>` : ''}
-                        ${item.price ? `<span>Price: £${item.price.toFixed(2)}</span>` : ''}
-                    </div>
-                `;
-
-                const itemActions = `
-                    <div class="item-actions">
-                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItemChecked('${item.id}', ${item.checked})">
-                        <button onclick="editShoppingItem('${item.id}')">Edit</button>
-                        <button class="delete" onclick="deleteShoppingItem('${item.id}')">Delete</button>
-                    </div>
-                `;
-
-                itemElement.innerHTML = itemDetails + itemActions;
-                shoppingListItemsDiv.appendChild(itemElement);
-
-                if (item.price && !item.checked) {
-                    totalCost += item.price * item.quantity;
-                }
-            });
-            costSummary.textContent = `Total: £${totalCost.toFixed(2)}`;
-        }
-
-        async function toggleItemChecked(id, currentCheckedStatus) {
-            await db.collection('shoppingList').doc(id).update({
-                checked: !currentCheckedStatus
-            });
-        }
-
-        async function deleteShoppingItem(id) {
+    // Event delegation for shopping list actions
+    itemsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-button')) {
+            const itemId = e.target.dataset.id;
             if (confirm('Are you sure you want to delete this item?')) {
-                await db.collection('shoppingList').doc(id).delete();
-            }
-        }
-
-        function editShoppingItem(id) {
-            const item = allShoppingItems.find(i => i.id === id);
-            if (item) {
-                editItemIdInput.value = item.id;
-                editItemNameInput.value = item.name;
-                editQuantityInput.value = item.quantity;
-                editPriceInput.value = item.price || '';
-                editModal.style.display = 'flex'; // Use flex to center
-            }
-        }
-
-        editForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = editItemIdInput.value;
-            const quantity = parseInt(editQuantityInput.value, 10);
-            const price = parseFloat(editPriceInput.value);
-
-            if (isNaN(quantity) || quantity <= 0) {
-                alert('Please enter a valid quantity.');
-                return;
-            }
-
-            await db.collection('shoppingList').doc(id).update({
-                quantity: quantity,
-                price: isNaN(price) ? null : price
-            });
-            closeEditModal();
-        });
-
-        function closeEditModal() {
-            editModal.style.display = 'none';
-        }
-
-        // --- Item Template Management ---
-        addTemplateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = templateItemNameInput.value.trim();
-            const store = templateStoreSelect.value; // Get store from new dropdown
-            const isle = parseInt(templateIsleInput.value, 10) || null;
-            const position = templatePositionInput.value.trim() || null;
-            const side = templateSideSelect.value || null;
-            const price = parseFloat(templatePriceInput.value) || null;
-            const pickOrder = parseInt(templatePickOrderInput.value, 10) || null;
-
-            if (!name) {
-                alert('Item name is required for a template.');
-                return;
-            }
-
-            // Check if a template for this item and store already exists
-            const existingTemplate = allTemplates.find(t => t.name.toLowerCase() === name.toLowerCase() && t.store === store);
-            if (existingTemplate) {
-                alert(`A template for "${name}" already exists for ${store}.`);
-                return;
-            }
-
-            await db.collection('itemTemplates').add({
-                name, store, isle, position, side, price, pickOrder
-            });
-
-            // Clear form
-            templateItemNameInput.value = '';
-            templateIsleInput.value = '';
-            templatePositionInput.value = '';
-            templateSideSelect.value = '';
-            templatePriceInput.value = '';
-            templatePickOrderInput.value = '';
-            // templateStoreSelect remains on selectedStore
-        });
-
-        function renderTemplates() {
-            itemTemplatesDiv.innerHTML = '';
-            if (allTemplates.length === 0) {
-                itemTemplatesDiv.innerHTML = '<p>No item templates found for this store.</p>';
-                return;
-            }
-
-            allTemplates.forEach(template => {
-                const templateElement = document.createElement('div');
-                templateElement.classList.add('template-item');
-                templateElement.innerHTML = `
-                    <div class="template-details">
-                        <strong>${template.name}</strong>
-                        <span>Store: ${template.store}</span>
-                        ${template.isle ? `<span>Aisle: ${template.isle}${template.position ? ` (${template.position})` : ''}${template.side ? `, ${template.side}` : ''}</span>` : ''}
-                        ${template.price ? `<span>Price: £${template.price.toFixed(2)}</span>` : ''}
-                        ${template.pickOrder ? `<span>Pick Order: ${template.pickOrder}</span>` : ''}
-                    </div>
-                    <div class="template-actions">
-                        <button onclick="editItemTemplate('${template.id}')">Edit</button>
-                        <button class="delete" onclick="deleteItemTemplate('${template.id}')">Delete</button>
-                    </div>
-                `;
-                itemTemplatesDiv.appendChild(templateElement);
-            });
-        }
-
-        async function deleteItemTemplate(id) {
-            if (confirm('Are you sure you want to delete this item template?')) {
-                await db.collection('itemTemplates').doc(id).delete();
-            }
-        }
-
-        function editItemTemplate(id) {
-            const template = allTemplates.find(t => t.id === id);
-            if (template) {
-                editTemplateIdInput.value = template.id;
-                editTemplateItemNameInput.value = template.name;
-                // Ensure the editTemplateStoreSelect options are correctly populated and selected
-                // This is handled by populateStoreDropdowns(), but we'll set the value here.
-                editTemplateStoreSelect.value = template.store;
-                editTemplateIsleInput.value = template.isle || '';
-                editTemplatePositionInput.value = template.position || '';
-                editTemplateSideSelect.value = template.side || '';
-                editTemplatePriceInput.value = template.price || '';
-                editTemplatePickOrderInput.value = template.pickOrder || '';
-                editTemplateModal.style.display = 'flex'; // Use flex to center
-            }
-        }
-
-        editTemplateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = editTemplateIdInput.value;
-            const name = editTemplateItemNameInput.value.trim(); // Name is readonly, but good to have
-            const store = editTemplateStoreSelect.value;
-            const isle = parseInt(editTemplateIsleInput.value, 10) || null;
-            const position = editTemplatePositionInput.value.trim() || null;
-            const side = editTemplateSideSelect.value || null;
-            const price = parseFloat(editTemplatePriceInput.value) || null;
-            const pickOrder = parseInt(editTemplatePickOrderInput.value, 10) || null;
-
-            if (!name) {
-                alert('Item name is required for a template.');
-                return;
-            }
-
-            // Check if changing store would create a duplicate template name for that store
-            // Only perform this check if the store is being changed for the template
-            const originalTemplate = allTemplates.find(t => t.id === id);
-            if (originalTemplate && originalTemplate.store !== store) {
-                const duplicateCheck = await db.collection('itemTemplates')
-                    .where('name', '==', name)
-                    .where('store', '==', store)
-                    .get();
-                if (!duplicateCheck.empty) {
-                    alert(`A template for "${name}" already exists for ${store}. Please choose a different store or item name.`);
-                    return;
+                try {
+                    await db.collection('shoppingList').doc(itemId).delete();
+                } catch (error) {
+                    console.error("Error removing document: ", error);
+                    alert("Failed to delete item. Please try again.");
                 }
             }
-
-
-            await db.collection('itemTemplates').doc(id).update({
-                name, store, isle, position, side, price, pickOrder
-            });
-            closeEditTemplateModal();
-        });
-
-        function closeEditTemplateModal() {
-            editTemplateModal.style.display = 'none';
-        }
-
-        function getTemplateForItem(itemName) {
-            // allTemplates is already filtered by the selectedStore
-            return allTemplates.find(template => template.name.toLowerCase() === itemName.toLowerCase());
-        }
-
-        function updateAutocomplete(templates) {
-            // This function exists mainly to be called after fetchItemTemplates
-            // The actual autocomplete logic is in the itemNameInput event listener
-            // which references the `allTemplates` global variable.
-            // No direct code change needed here for functionality.
-        }
-
-        // --- Shop Route Drawing ---
-        function drawFloorPlan() {
-            const canvas = floorPlanCanvas;
-            const ctx = canvas.getContext('2d');
-
-            // Dynamically adjust canvas size
-            canvas.width = canvas.offsetWidth;
-            canvas.height = Math.max(400, canvas.offsetWidth * 0.6); // Maintain aspect ratio or min height
-
-            const padding = 40;
-            const width = canvas.width - 2 * padding;
-            const height = canvas.height - 2 * padding;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawing
-
-            // Draw outer rectangle (store outline)
-            ctx.strokeStyle = '#0055a5';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(padding, padding, width, height);
-
-            let aisles = [];
-            if (selectedStore === 'Aldi - Batley') { // Example for 'Aldi - Batley' store
-                aisles = [
-                    { number: 1, direction: 'down' },
-                    { number: 2, direction: 'up' },
-                    { number: 3, direction: 'down' },
-                    { number: 4, direction: 'up' }
-                ];
-            } else if (selectedStore === 'Aldi - Wakefield') { // Corrected logic for Aldi - Wakefield
-                aisles = [
-                    { number: 1, direction: 'up' },   // Isle 1: Up
-                    { number: 2, direction: 'down' }, // Isle 2: Down
-                    { number: 3, direction: 'up' },   // Isle 3: Up
-                    { number: 4, direction: 'down' }  // Isle 4: Down
-                ];
-            }
-            // Add more 'else if' blocks for other stores as needed
-
-            const aisleWidth = width / aisles.length;
-
-            // Draw aisles and arrows
-            aisles.forEach((aisle, index) => {
-                const xStart = padding + index * aisleWidth;
-                const xCenter = xStart + aisleWidth / 2;
-
-                // Draw aisle divider (only from second aisle onwards)
-                if (index > 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(xStart, padding);
-                    ctx.lineTo(xStart, padding + height);
-                    ctx.stroke();
-                }
-
-                // Draw aisle number at the top
-                ctx.fillStyle = '#000';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom'; // Align text baseline to bottom
-                ctx.fillText(aisle.number, xCenter, padding - 5); // Position slightly above the padding line
-
-                // Draw arrow for direction
-                const arrowLength = height * 0.6; // Length of the main arrow line
-                const arrowHeadSize = 10;
-                const arrowMargin = height * 0.2; // Margin from top/bottom of aisle
-
-                ctx.beginPath();
-                ctx.strokeStyle = '#0055a5'; // Set arrow color
-                if (aisle.direction === 'up') {
-                    ctx.moveTo(xCenter, padding + arrowMargin + arrowLength);
-                    ctx.lineTo(xCenter, padding + arrowMargin);
-                    // Arrow head
-                    ctx.lineTo(xCenter - arrowHeadSize, padding + arrowMargin + arrowHeadSize);
-                    ctx.moveTo(xCenter, padding + arrowMargin);
-                    ctx.lineTo(xCenter + arrowHeadSize, padding + arrowMargin + arrowHeadSize);
-                } else if (aisle.direction === 'down') {
-                    ctx.moveTo(xCenter, padding + arrowMargin);
-                    ctx.lineTo(xCenter, padding + arrowMargin + arrowLength);
-                    // Arrow head
-                    ctx.lineTo(xCenter - arrowHeadSize, padding + arrowMargin + arrowLength - arrowHeadSize);
-                    ctx.moveTo(xCenter, padding + arrowMargin + arrowLength);
-                    ctx.lineTo(xCenter + arrowHeadSize, padding + arrowMargin + arrowLength - arrowHeadSize);
-                }
-                ctx.stroke();
-            });
-
-            // Draw entry point (red circle)
-            const entryRadius = 8;
-            // Position it near the bottom right of the store layout, just outside the boundary
-            const entryX = padding + width + (padding / 2) + entryRadius;
-            const entryY = padding + height - entryRadius;
-            ctx.beginPath();
-            ctx.arc(entryX, entryY, entryRadius, 0, 2 * Math.PI);
-            ctx.fillStyle = 'red';
-            ctx.fill();
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            ctx.fillStyle = '#000';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top'; // Align text baseline to top
-            ctx.fillText('ENTRY', entryX, entryY + entryRadius + 5);
-
-
-            // Draw shopping item markers if any
-            const itemsToShop = allShoppingItems.filter(item => !item.checked && item.isle && item.pickOrder);
-            if (itemsToShop.length > 0) {
-                // Sort items by their pick order
-                itemsToShop.sort((a, b) => a.pickOrder - b.pickOrder);
-
-                let itemPositions = [];
-                itemsToShop.forEach((item, index) => {
-                    const aisleIndex = item.isle - 1; // Assuming aisle numbers are 1-based
-                    if (aisleIndex >= 0 && aisleIndex < aisles.length) {
-                        const aisleStartX = padding + aisleIndex * aisleWidth;
-                        const aisleCenterX = aisleStartX + aisleWidth / 2;
-
-                        // Calculate y position within the aisle, considering side if available
-                        let itemY;
-                        const itemsInThisAisle = itemsToShop.filter(i => i.isle === item.isle);
-                        const aisleHeightAvailable = height; // Total height of an aisle for item distribution
-                        const itemHeightFactor = aisleHeightAvailable / (itemsInThisAisle.length + 1);
-
-                        // A simple way to distribute items vertically within an aisle
-                        // This can be made more sophisticated with actual shelf positions/coordinates
-                        const itemInAisleIndex = itemsInThisAisle.indexOf(item);
-                        itemY = padding + (itemInAisleIndex + 1) * itemHeightFactor;
-
-
-                        itemPositions.push({ x: aisleCenterX, y: itemY, item: item });
-
-                        // Draw item marker
-                        ctx.fillStyle = '#0055a5';
-                        ctx.beginPath();
-                        ctx.arc(aisleCenterX, itemY, 14, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        ctx.fillStyle = 'white';
-                        ctx.font = 'bold 12px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(item.pickOrder, aisleCenterX, itemY); // Show pick order on marker
-                    }
+        } else if (e.target.classList.contains('purchased-button') && e.target.closest('#itemsContainer')) {
+            const itemId = e.target.dataset.id;
+            const currentPurchasedStatus = e.target.dataset.purchased === 'true';
+            try {
+                await db.collection('shoppingList').doc(itemId).update({
+                    purchased: !currentPurchasedStatus
                 });
+            } catch (error) {
+                console.error("Error updating document: ", error);
+                alert("Failed to update item status. Please try again.");
+            }
+        } else if (e.target.classList.contains('edit-button') && e.target.closest('#itemsContainer')) {
+            const itemId = e.target.dataset.id;
+            editingItemId = itemId;
+            
+            try {
+              const doc = await db.collection('shoppingList').doc(itemId).get();
+              if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('editItemName').value = data.name;
+                document.getElementById('editItemDescription').value = data.description || '';
+                document.getElementById('editItemQty').value = data.qty || 1;
+                
+                editModal.classList.add('show');
+              }
+            } catch (error) {
+              console.error("Error fetching item: ", error);
+            }
+        } else if (e.target.classList.contains('qty-increase-button')) {
+            const itemId = e.target.dataset.id;
+            updateQuantity(itemId, true);
+        } else if (e.target.classList.contains('qty-decrease-button')) {
+            const itemId = e.target.dataset.id;
+            updateQuantity(itemId, false);
+        }
+    });
 
-                // Sort itemPositions by their pick order before drawing the path
-                itemPositions.sort((a, b) => a.item.pickOrder - b.item.pickOrder);
+    // Event delegation for mobile view actions
+    mobileItemsContainer.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('mobile-purchased-button')) {
+        const itemId = e.target.dataset.id;
+        const currentPurchasedStatus = e.target.dataset.purchased === 'true';
+        try {
+          await db.collection('shoppingList').doc(itemId).update({
+            purchased: !currentPurchasedStatus
+          });
+        } catch (error) {
+          console.error("Error updating document: ", error);
+          alert("Failed to update item status. Please try again.");
+        }
+      }
+    });
 
-                // Draw path connecting entry to items, and between items
-                if (itemPositions.length > 0) {
-                    ctx.strokeStyle = '#28a745'; // Green path
-                    ctx.lineWidth = 3;
-                    ctx.setLineDash([5, 5]); // Dashed line
-                    ctx.beginPath();
-                    ctx.moveTo(entryX, entryY); // Start from entry point
-
-                    itemPositions.forEach(pos => {
-                        ctx.lineTo(pos.x, pos.y);
-                    });
-                    ctx.stroke();
-                    ctx.setLineDash([]); // Reset line dash
+    // Event delegation for template actions
+    templatesContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-button') && e.target.closest('#templatesContainer')) {
+            const templateId = e.target.dataset.id;
+            if (confirm('Are you sure you want to delete this template?')) {
+                try {
+                    await db.collection('itemTemplates').doc(templateId).delete();
+                } catch (error) {
+                    console.error("Error removing template: ", error);
+                    alert("Failed to delete template. Please try again.");
                 }
-            } else {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('No items to shop for', canvas.width / 2, canvas.height / 2);
+            }
+        } else if (e.target.classList.contains('edit-button') && e.target.closest('#templatesContainer')) {
+            const templateId = e.target.dataset.id;
+            const template = allTemplates.find(t => t.id === templateId);
+            
+            if (template) {
+              editingTemplateId = templateId;
+              document.getElementById('editTemplateItemName').value = template.name;
+              document.getElementById('editTemplateIsle').value = template.isle;
+              document.getElementById('editTemplatePosition').value = template.position;
+              document.getElementById('editTemplateSide').value = template.side;
+              document.getElementById('editTemplatePrice').value = template.price || 0;
+              document.getElementById('editTemplatePickOrder').value = template.pickOrder || 1;
+              editTemplateModal.classList.add('show');
             }
         }
+    });
 
-        // Resize observer to redraw canvas when its container resizes
-        const resizeObserver = new ResizeObserver(() => {
-            if (document.getElementById('route-tab').classList.contains('active')) {
-                drawFloorPlan();
-            }
+    // Edit item form submission
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editDescription = document.getElementById('editItemDescription').value.trim();
+      const editQty = parseInt(document.getElementById('editItemQty').value);
+
+      if (isNaN(editQty) || editQty < 1) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
+
+      try {
+        await db.collection('shoppingList').doc(editingItemId).update({
+          description: editDescription,
+          qty: editQty
         });
-        // Observe the parent of the canvas to detect width changes which would affect canvas size
-        if (floorPlanCanvas.parentElement) {
-            resizeObserver.observe(floorPlanCanvas.parentElement);
-        }
 
+        editModal.classList.remove('show');
+        editingItemId = null;
+      } catch (error) {
+        console.error("Error updating document: ", error);
+        alert("Failed to update item. Please try again.");
+      }
+    });
 
-        function renderRouteGuide(items) {
-            shoppingRouteList.innerHTML = '';
-            const itemsForRoute = items.filter(item => !item.checked && item.isle && item.pickOrder);
+    // Edit template form submission
+    document.getElementById('editTemplateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-            if (itemsForRoute.length === 0) {
-                shoppingRouteList.innerHTML = '<li>No items with aisle or pick order information to display route.</li>';
-                return;
-            }
+      const editTemplateIsle = parseInt(document.getElementById('editTemplateIsle').value);
+      const editTemplatePosition = document.getElementById('editTemplatePosition').value;
+      const editTemplateSide = document.getElementById('editTemplateSide').value;
+      const editTemplatePrice = parseFloat(document.getElementById('editTemplatePrice').value) || 0;
+      const editTemplatePickOrder = parseInt(document.getElementById('editTemplatePickOrder').value);
 
-            // Sort by pick order
-            itemsForRoute.sort((a, b) => a.pickOrder - b.pickOrder);
+      if (isNaN(editTemplateIsle) || !editTemplatePosition || !editTemplateSide || isNaN(editTemplatePickOrder)) {
+        alert('Please fill in all required fields correctly.');
+        return;
+      }
 
-            itemsForRoute.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${item.pickOrder}.</span> ${item.name}
-                    ${item.isle ? `(Aisle ${item.isle}${item.position ? `, ${item.position}` : ''}${item.side ? `, ${item.side}` : ''})` : ''}
-                `;
-                shoppingRouteList.appendChild(li);
-            });
-        }
-    </script>
+      try {
+        await db.collection('itemTemplates').doc(editingTemplateId).update({
+          isle: editTemplateIsle,
+          position: editTemplatePosition,
+          side: editTemplateSide,
+          price: editTemplatePrice,
+          pickOrder: editTemplatePickOrder
+        });
+
+        editTemplateModal.classList.remove('show');
+        editingTemplateId = null;
+      } catch (error) {
+        console.error("Error updating template: ", error);
+        alert("Failed to update template. Please try again.");
+      }
+    });
+  </script>
 </body>
 </html>
