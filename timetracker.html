@@ -200,6 +200,93 @@
     min-height: 16px;
     transition: opacity 0.3s;
   }
+
+  /* ---- ANALYTICS STYLES ---- */
+  .analytics-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .analytics-btn {
+    padding: 8px 14px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .analytics-btn:hover {
+    border-color: var(--accent);
+    background: rgba(76, 175, 133, 0.1);
+  }
+  .analytics-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .analytics-date-range {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex: 1;
+    min-width: 250px;
+  }
+  .analytics-date-range > div {
+    flex: 1;
+  }
+  .analytics-date-range input[type="date"] {
+    width: 100%;
+  }
+  .analytics-display {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .analytics-summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .analytics-summary:last-of-type {
+    border-bottom: none;
+  }
+  .analytics-summary .task-name {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .analytics-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+  .analytics-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 2px solid var(--border);
+    margin-top: 12px;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .analytics-total .dur {
+    color: var(--accent);
+  }
+  .analytics-empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 20px 0;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
 <body>
@@ -326,6 +413,32 @@
     <div id="summary"></div>
   </div>
 
+  <!-- ANALYTICS PANEL -->
+  <div class="panel">
+    <h2>Analytics</h2>
+    
+    <div class="analytics-controls">
+      <button class="analytics-btn active" data-range="7">Last 7 Days</button>
+      <button class="analytics-btn" data-range="30">Last 30 Days</button>
+      <button class="analytics-btn" data-range="90">Last 90 Days</button>
+      <button class="analytics-btn" data-range="all">All Time</button>
+      <div class="analytics-date-range" id="customDateRange" style="display:none;">
+        <div>
+          <label for="analyticsFromDate" style="font-size:0.75rem;">From</label>
+          <input type="date" id="analyticsFromDate">
+        </div>
+        <div>
+          <label for="analyticsToDate" style="font-size:0.75rem;">To</label>
+          <input type="date" id="analyticsToDate">
+        </div>
+      </div>
+    </div>
+
+    <div class="analytics-display">
+      <div id="analyticsSummary"></div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -367,15 +480,24 @@ const unloggedHoursEl = $("unloggedHours"), lunchDurationEl = $("lunchDuration")
 const timelinePanel = $("timelinePanel"), timelineBar = $("timelineBar"), timelineLegend = $("timelineLegend");
 const timelineStartEl = $("timelineStart"), timelineMidEl = $("timelineMid"), timelineEndEl = $("timelineEnd");
 const schedSavingIndicator = $("schedSavingIndicator");
+const analyticsSummary = $("analyticsSummary");
+const customDateRange = $("customDateRange");
+const analyticsFromDate = $("analyticsFromDate");
+const analyticsToDate = $("analyticsToDate");
 
 let selectedDate = new Date();
 let entries = [];
+let allEntries = []; // for analytics
 let allTaskNames = new Set();
 let runningEntry = null;
 let tickHandle = null;
 let unsubscribe = null;
+let unsubscribeAnalytics = null;
 let schedSaveTimeout = null;
 let isLoadingSchedule = false;
+let analyticsRange = 7; // days
+let customFrom = null;
+let customTo = null;
 
 // ---- helpers ----
 const pad = n => String(n).padStart(2, "0");
@@ -682,6 +804,21 @@ function loadEntriesForDate() {
   }, err => setStatus("Listener error: " + err.message));
 }
 
+// ---- load ALL entries for analytics ----
+function loadAllEntries() {
+  if (unsubscribeAnalytics) unsubscribeAnalytics();
+  const q = query(
+    entriesRef,
+    where("uid", "==", UID),
+    orderBy("start", "asc")
+  );
+  unsubscribeAnalytics = onSnapshot(q, snap => {
+    allEntries = [];
+    snap.forEach(d => allEntries.push({ id: d.id, ...d.data() }));
+    renderAnalytics();
+  }, err => console.error("Analytics listener error:", err));
+}
+
 // ---- task autocomplete ----
 onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
   allTaskNames = new Set();
@@ -695,6 +832,138 @@ onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
     });
   }
 });
+
+// ---- analytics date range ----
+function getAnalyticsDateRange() {
+  const now = new Date();
+  let from, to;
+
+  if (analyticsRange === "all") {
+    from = new Date(2000, 0, 1);
+    to = new Date(now.getFullYear() + 1, 11, 31);
+  } else if (analyticsRange === "custom") {
+    if (!customFrom || !customTo) return null;
+    from = startOfDate(customFrom);
+    to = endOfDate(customTo);
+  } else {
+    const days = parseInt(analyticsRange);
+    from = new Date(now);
+    from.setDate(from.getDate() - days);
+    from = startOfDate(from);
+    to = endOfDate(now);
+  }
+
+  return { from, to };
+}
+
+// ---- analytics render ----
+function renderAnalytics() {
+  const range = getAnalyticsDateRange();
+  if (!range) {
+    if (analyticsSummary) {
+      analyticsSummary.innerHTML = '<div class="analytics-empty">Please select a valid date range.</div>';
+    }
+    return;
+  }
+
+  const filtered = allEntries.filter(e => {
+    if (!e.end) return false;
+    const st = e.start.toDate();
+    return st >= range.from && st <= range.to;
+  });
+
+  const byTask = {};
+  let totalMins = 0;
+
+  filtered.forEach(e => {
+    const mins = e.durationMins || 0;
+    byTask[e.task] = (byTask[e.task] || 0) + mins;
+    totalMins += mins;
+  });
+
+  if (analyticsSummary) {
+    analyticsSummary.innerHTML = "";
+
+    if (Object.keys(byTask).length === 0) {
+      analyticsSummary.innerHTML = '<div class="analytics-empty">No completed entries in this period.</div>';
+      return;
+    }
+
+    const tasks = Object.keys(byTask).sort((a, b) => byTask[b] - byTask[a]);
+
+    tasks.forEach(task => {
+      const mins = byTask[task];
+      const row = document.createElement("div");
+      row.className = "analytics-summary";
+      const colour = getTaskColour(task);
+      const taskNameEl = document.createElement("span");
+      taskNameEl.className = "task-name";
+      const swatch = document.createElement("span");
+      swatch.className = "analytics-swatch";
+      swatch.style.background = colour;
+      const label = document.createElement("span");
+      label.textContent = escapeHtml(task);
+      taskNameEl.appendChild(swatch);
+      taskNameEl.appendChild(label);
+
+      const durEl = document.createElement("span");
+      durEl.className = "dur";
+      durEl.textContent = fmtDuration(mins);
+
+      row.appendChild(taskNameEl);
+      row.appendChild(durEl);
+      analyticsSummary.appendChild(row);
+    });
+
+    const totalRow = document.createElement("div");
+    totalRow.className = "analytics-total";
+    const totalLabel = document.createElement("span");
+    totalLabel.textContent = "Total Time";
+    const totalDur = document.createElement("span");
+    totalDur.className = "dur";
+    totalDur.textContent = fmtDuration(totalMins);
+    totalRow.appendChild(totalLabel);
+    totalRow.appendChild(totalDur);
+    analyticsSummary.appendChild(totalRow);
+  }
+}
+
+// ---- analytics controls ----
+document.querySelectorAll(".analytics-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".analytics-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    analyticsRange = this.dataset.range;
+    if (analyticsRange === "custom") {
+      if (customDateRange) customDateRange.style.display = "flex";
+    } else {
+      if (customDateRange) customDateRange.style.display = "none";
+    }
+    renderAnalytics();
+  });
+});
+
+if (analyticsFromDate) {
+  analyticsFromDate.addEventListener("change", () => {
+    const val = analyticsFromDate.value;
+    if (val) {
+      const [y, m, d] = val.split("-").map(Number);
+      customFrom = new Date(y, m - 1, d);
+    }
+    renderAnalytics();
+  });
+}
+
+if (analyticsToDate) {
+  analyticsToDate.addEventListener("change", () => {
+    const val = analyticsToDate.value;
+    if (val) {
+      const [y, m, d] = val.split("-").map(Number);
+      customTo = new Date(y, m - 1, d);
+    }
+    renderAnalytics();
+  });
+}
 
 // ---- build timeline ----
 function renderTimeline() {
@@ -1002,6 +1271,7 @@ async function removeEntry(entry) {
 // ---- initial load ----
 loadScheduleForDate();
 loadEntriesForDate();
+loadAllEntries();
 </script>
 </body>
 </html>
