@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Tracker</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2129;
+    --panel2: #222c37;
+    --accent: #4caf85;
+    --accent-hover: #3d9b71;
+    --danger: #c0564b;
+    --text: #e6edf3;
+    --muted: #8a97a5;
+    --border: #2c3845;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    padding: 18px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  #clock { font-size: 3.2rem; font-weight: 700; letter-spacing: 1px; line-height: 1; }
+  #date  { font-size: 1.2rem; color: var(--muted); margin-top: 6px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; }
+  input[type="text"], input[type="time"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 1rem;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .grid .full { grid-column: 1 / -1; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+  #elapsed {
+    font-size: 2.6rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 10px 0 18px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+  #elapsed.idle { color: var(--muted); }
+
+  .btn {
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+  }
+  .btn-start { background: var(--accent); }
+  .btn-start:hover { background: var(--accent-hover); }
+  .btn-stop  { background: var(--danger); }
+  .btn-row { display: flex; gap: 12px; justify-content: center; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .start-time-row { display: flex; gap: 10px; align-items: flex-end; }
+  .start-time-row > div { flex: 1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+  td input { padding: 5px 7px; font-size: 0.9rem; }
+  .dur { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .row-del {
+    background: none; border: none; color: var(--danger);
+    cursor: pointer; font-size: 1.1rem; padding: 0 6px;
+  }
+  .running-tag {
+    display: inline-block; font-size: 0.7rem; background: var(--accent);
+    color: #fff; padding: 2px 7px; border-radius: 10px; margin-left: 6px;
+  }
+
+  h2 { font-size: 1.05rem; margin: 0 0 14px; }
+  .totals { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .totals .big { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+
+  .summary-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .task-name { font-weight: 600; }
+
+  #status { text-align: center; color: var(--muted); font-size: 0.85rem; min-height: 18px; margin-top: 6px; }
+  datalist { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div id="clock">--:--:--</div>
+    <div id="date">Loading…</div>
+  </header>
+
+  <!-- TIMER PANEL -->
+  <div class="panel">
+    <div class="grid">
+      <div class="full">
+        <label for="taskInput">Task</label>
+        <input type="text" id="taskInput" list="taskList" placeholder="e.g. Machine X" autocomplete="off">
+        <datalist id="taskList"></datalist>
+      </div>
+      <div class="full">
+        <label for="noteInput">Note / Description</label>
+        <input type="text" id="noteInput" placeholder="e.g. Modelling, Detailing">
+      </div>
+      <div class="full start-time-row">
+        <div>
+          <label for="startTimeInput">Start Time (editable to backdate)</label>
+          <input type="time" id="startTimeInput" step="60">
+        </div>
+      </div>
+    </div>
+
+    <div id="elapsed" class="idle">00:00:00</div>
+
+    <div class="btn-row">
+      <button class="btn btn-start" id="startBtn">Start</button>
+      <button class="btn btn-stop" id="stopBtn" disabled>Stop</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <!-- DAILY LOG -->
+  <div class="panel">
+    <h2>Today's Log</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:80px">Start</th>
+          <th style="width:80px">End</th>
+          <th style="width:90px">Duration</th>
+          <th>Task</th>
+          <th>Note</th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+    <div class="totals">
+      <span>Daily Total</span>
+      <span class="big" id="dailyTotal">0h 00m</span>
+    </div>
+  </div>
+
+  <!-- PER-TASK SUMMARY -->
+  <div class="panel">
+    <h2>Per-Task Breakdown (today)</h2>
+    <div id="summary"></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+  query, where, orderBy, onSnapshot, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ---- Firebase config ----
+const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const entriesRef = collection(db, "timeEntries");
+
+// ---- when Auth is added later, set this to the logged-in user's uid ----
+const UID = "default-user";
+
+// ---- DOM refs ----
+const $ = id => document.getElementById(id);
+const clockEl = $("clock"), dateEl = $("date");
+const taskInput = $("taskInput"), noteInput = $("noteInput");
+const startTimeInput = $("startTimeInput"), startBtn = $("startBtn"), stopBtn = $("stopBtn");
+const elapsedEl = $("elapsed"), statusEl = $("status");
+const logBody = $("logBody"), dailyTotalEl = $("dailyTotal"), summaryEl = $("summary");
+const taskList = $("taskList");
+
+let entries = [];          // today's entries from Firestore
+let allTaskNames = new Set();
+let runningEntry = null;   // the doc with end == null
+let tickHandle = null;
+
+// ---- helpers ----
+const pad = n => String(n).padStart(2, "0");
+
+function fmtClock(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fmtDate(d) {
+  return d.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+}
+function fmtHM(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}`; }
+function timeInputValue(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+
+function fmtDuration(mins) {
+  const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+  return `${h}h ${pad(m)}m`;
+}
+function fmtStopwatch(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function endOfToday()   { const d = new Date(); d.setHours(23,59,59,999); return d; }
+
+// ---- live clock ----
+function updateClock() {
+  const now = new Date();
+  clockEl.textContent = fmtClock(now);
+  dateEl.textContent = fmtDate(now);
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ---- prime the start-time field with "now" ----
+function primeStartTime() { startTimeInput.value = timeInputValue(new Date()); }
+primeStartTime();
+
+// ---- build a Date from the time input, using today's date ----
+function startDateFromInput() {
+  const v = startTimeInput.value;
+  if (!v) return new Date();
+  const [h, m] = v.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+// ---- stopwatch tick ----
+function startTicking() {
+  stopTicking();
+  tickHandle = setInterval(() => {
+    if (!runningEntry) return;
+    const secs = (Date.now() - runningEntry.start.toMillis()) / 1000;
+    elapsedEl.textContent = fmtStopwatch(secs);
+  }, 1000);
+}
+function stopTicking() { if (tickHandle) clearInterval(tickHandle); tickHandle = null; }
+
+// ---- START ----
+startBtn.addEventListener("click", async () => {
+  const task = taskInput.value.trim();
+  if (!task) { setStatus("Please enter a task name."); taskInput.focus(); return; }
+  if (runningEntry) { setStatus("Stop the current timer first."); return; }
+
+  const start = startDateFromInput();
+  setStatus("Starting…");
+  try {
+    await addDoc(entriesRef, {
+      uid: UID,
+      task,
+      note: noteInput.value.trim(),
+      start: Timestamp.fromDate(start),
+      end: null,
+      durationMins: 0
+    });
+    setStatus("");
+  } catch (e) { setStatus("Error: " + e.message); }
+});
+
+// ---- STOP ----
+stopBtn.addEventListener("click", async () => {
+  if (!runningEntry) return;
+  const end = new Date();
+  const mins = (end - runningEntry.start.toDate()) / 60000;
+  setStatus("Stopping…");
+  try {
+    await updateDoc(doc(db, "timeEntries", runningEntry.id), {
+      end: Timestamp.fromDate(end),
+      durationMins: Math.max(0, mins)
+    });
+    taskInput.value = "";
+    noteInput.value = "";
+    primeStartTime();
+    setStatus("");
+  } catch (e) { setStatus("Error: " + e.message); }
+});
+
+function setStatus(msg) { statusEl.textContent = msg; }
+
+// ---- live Firestore listener for today's entries ----
+const todayQuery = query(
+  entriesRef,
+  where("start", ">=", Timestamp.fromDate(startOfToday())),
+  where("start", "<=", Timestamp.fromDate(endOfToday())),
+  orderBy("start", "asc")
+);
+
+onSnapshot(todayQuery, snap => {
+  entries = [];
+  snap.forEach(d => entries.push({ id: d.id, ...d.data() }));
+  runningEntry = entries.find(e => e.end == null) || null;
+  render();
+}, err => setStatus("Listener error: " + err.message));
+
+// ---- separate listener (all time) to build the task autocomplete list ----
+onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
+  allTaskNames = new Set();
+  snap.forEach(d => { const t = d.data().task; if (t) allTaskNames.add(t); });
+  taskList.innerHTML = "";
+  [...allTaskNames].sort().forEach(t => {
+    const o = document.createElement("option"); o.value = t; taskList.appendChild(o);
+  });
+});
+
+// ---- render table + totals + summary ----
+function render() {
+  // timer buttons / display
+  if (runningEntry) {
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    elapsedEl.classList.remove("idle");
+    taskInput.value = runningEntry.task;
+    noteInput.value = runningEntry.note || "";
+    startTimeInput.value = timeInputValue(runningEntry.start.toDate());
+    startTicking();
+  } else {
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    elapsedEl.classList.add("idle");
+    elapsedEl.textContent = "00:00:00";
+    stopTicking();
+  }
+
+  // table
+  logBody.innerHTML = "";
+  let totalMins = 0;
+  const byTask = {};
+
+  entries.forEach(e => {
+    const tr = document.createElement("tr");
+    const startD = e.start.toDate();
+    const endD = e.end ? e.end.toDate() : null;
+    const mins = endD ? (endD - startD) / 60000 : (Date.now() - startD) / 60000;
+
+    if (e.end) {
+      totalMins += mins;
+      byTask[e.task] = (byTask[e.task] || 0) + mins;
+    }
+
+    // Start (editable)
+    const tdStart = document.createElement("td");
+    const startIn = document.createElement("input");
+    startIn.type = "time"; startIn.value = fmtHM(startD);
+    startIn.addEventListener("change", () => editTime(e, "start", startIn.value));
+    tdStart.appendChild(startIn);
+
+    // End (editable, blank if running)
+    const tdEnd = document.createElement("td");
+    if (endD) {
+      const endIn = document.createElement("input");
+      endIn.type = "time"; endIn.value = fmtHM(endD);
+      endIn.addEventListener("change", () => editTime(e, "end", endIn.value));
+      tdEnd.appendChild(endIn);
+    } else {
+      tdEnd.innerHTML = '<span class="running-tag">running</span>';
+    }
+
+    // Duration
+    const tdDur = document.createElement("td");
+    tdDur.className = "dur";
+    tdDur.textContent = fmtDuration(mins);
+
+    // Task (editable)
+    const tdTask = document.createElement("td");
+    const taskIn = document.createElement("input");
+    taskIn.type = "text"; taskIn.value = e.task;
+    taskIn.addEventListener("change", () => editField(e, "task", taskIn.value.trim()));
+    tdTask.appendChild(taskIn);
+
+    // Note (editable)
+    const tdNote = document.createElement("td");
+    const noteIn = document.createElement("input");
+    noteIn.type = "text"; noteIn.value = e.note || "";
+    noteIn.addEventListener("change", () => editField(e, "note", noteIn.value.trim()));
+    tdNote.appendChild(noteIn);
+
+    // Delete
+    const tdDel = document.createElement("td");
+    const delBtn = document.createElement("button");
+    delBtn.className = "row-del"; delBtn.textContent = "✕"; delBtn.title = "Delete";
+    delBtn.addEventListener("click", () => removeEntry(e));
+    tdDel.appendChild(delBtn);
+
+    tr.append(tdStart, tdEnd, tdDur, tdTask, tdNote, tdDel);
+    logBody.appendChild(tr);
+  });
+
+  dailyTotalEl.textContent = fmtDuration(totalMins);
+
+  // summary
+  summaryEl.innerHTML = "";
+  const tasks = Object.keys(byTask).sort((a, b) => byTask[b] - byTask[a]);
+  if (!tasks.length) {
+    summaryEl.innerHTML = '<div style="color:var(--muted)">No completed entries yet today.</div>';
+  } else {
+    tasks.forEach(t => {
+      const row = document.createElement("div");
+      row.className = "summary-row";
+      row.innerHTML = `<span class="task-name">${escapeHtml(t)}</span><span class="dur">${fmtDuration(byTask[t])}</span>`;
+      summaryEl.appendChild(row);
+    });
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+// ---- inline edits ----
+async function editTime(entry, field, value) {
+  if (!value) return;
+  const [h, m] = value.split(":").map(Number);
+  const base = entry[field] ? entry[field].toDate() : new Date();
+  base.setHours(h, m, 0, 0);
+  const update = { [field]: Timestamp.fromDate(base) };
+  // recompute duration if both ends present
+  const s = field === "start" ? base : entry.start.toDate();
+  const en = field === "end" ? base : (entry.end ? entry.end.toDate() : null);
+  if (en) update.durationMins = Math.max(0, (en - s) / 60000);
+  try { await updateDoc(doc(db, "timeEntries", entry.id), update); }
+  catch (e) { setStatus("Error: " + e.message); }
+}
+
+async function editField(entry, field, value) {
+  try { await updateDoc(doc(db, "timeEntries", entry.id), { [field]: value }); }
+  catch (e) { setStatus("Error: " + e.message); }
+}
+
+async function removeEntry(entry) {
+  if (!confirm("Delete this entry?")) return;
+  try { await deleteDoc(doc(db, "timeEntries", entry.id)); }
+  catch (e) { setStatus("Error: " + e.message); }
+}
+</script>
+</body>
+</html>
