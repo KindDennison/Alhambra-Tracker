@@ -252,7 +252,7 @@
       <div class="sched-line"><span>Logged Hours:</span><span id="loggedHours" class="dur">0h 00m</span></div>
       <div class="sched-line highlight"><span>Unlogged Hours:</span><span id="unloggedHours" class="dur">0h 00m</span></div>
     </div>
-    <div class="saving-indicator" id="schedSavingindicator"></div>
+    <div class="saving-indicator" id="schedSavingIndicator"></div>
   </div>
 
   <!-- TIMELINE -->
@@ -406,6 +406,10 @@ function timeToMins(t) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
 
 // ---- colour scheme ----
 const taskColours = [
@@ -425,43 +429,58 @@ function getTaskColour(task) {
 // ---- live clock ----
 function updateClock() {
   const now = new Date();
-  clockEl.textContent = fmtClock(now);
-  dateEl.textContent = fmtDate(now);
+  if (clockEl) clockEl.textContent = fmtClock(now);
+  if (dateEl) dateEl.textContent = fmtDate(now);
 }
 updateClock();
 setInterval(updateClock, 1000);
 
 // ---- date picker ----
 function updateDateInput() {
-  dateInput.value = dateInputValue(selectedDate);
-  logTitle.textContent = dateStringsMatch(selectedDate, new Date())
-    ? "Today's Log"
-    : `Log for ${fmtDate(selectedDate)}`;
-  timerPanel.style.display = dateStringsMatch(selectedDate, new Date()) ? "block" : "none";
+  if (dateInput) dateInput.value = dateInputValue(selectedDate);
+  if (logTitle) {
+    logTitle.textContent = dateStringsMatch(selectedDate, new Date())
+      ? "Today's Log"
+      : `Log for ${fmtDate(selectedDate)}`;
+  }
+  if (timerPanel) {
+    timerPanel.style.display = dateStringsMatch(selectedDate, new Date()) ? "block" : "none";
+  }
 }
 updateDateInput();
 
-dateInput.addEventListener("change", e => {
-  if (e.target.value) {
-    const [y,m,d] = e.target.value.split("-").map(Number);
-    selectedDate = new Date(y, m-1, d);
-    updateDateInput();
-    loadScheduleForDate();
-    loadEntriesForDate();
-  }
-});
-prevDayBtn.addEventListener("click", () => {
-  selectedDate.setDate(selectedDate.getDate() - 1);
-  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
-});
-nextDayBtn.addEventListener("click", () => {
-  selectedDate.setDate(selectedDate.getDate() + 1);
-  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
-});
-todayBtn.addEventListener("click", () => {
-  selectedDate = new Date();
-  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
-});
+if (dateInput) {
+  dateInput.addEventListener("change", e => {
+    if (e.target.value) {
+      const [y,m,d] = e.target.value.split("-").map(Number);
+      selectedDate = new Date(y, m-1, d);
+      updateDateInput();
+      loadScheduleForDate();
+      loadEntriesForDate();
+    }
+  });
+}
+
+if (prevDayBtn) {
+  prevDayBtn.addEventListener("click", () => {
+    selectedDate.setDate(selectedDate.getDate() - 1);
+    updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
+  });
+}
+
+if (nextDayBtn) {
+  nextDayBtn.addEventListener("click", () => {
+    selectedDate.setDate(selectedDate.getDate() + 1);
+    updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
+  });
+}
+
+if (todayBtn) {
+  todayBtn.addEventListener("click", () => {
+    selectedDate = new Date();
+    updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
+  });
+}
 
 // ---- schedule: Firestore load / save ----
 function scheduleDocId() {
@@ -470,37 +489,44 @@ function scheduleDocId() {
 
 async function loadScheduleForDate() {
   isLoadingSchedule = true;
-  schedSavingIndicator.textContent = "Loading schedule…";
+  if (schedSavingIndicator) {
+    schedSavingIndicator.textContent = "Loading schedule…";
+  }
 
   try {
     const snap = await getDoc(doc(db, "workSchedules", scheduleDocId()));
     if (snap.exists()) {
       const d = snap.data();
-      workStart.value  = d.workStart  || "";
-      workEnd.value    = d.workEnd    || "";
-      lunchStart.value = d.lunchStart || "";
-      lunchEnd.value   = d.lunchEnd   || "";
+      if (workStart) workStart.value = d.workStart || "";
+      if (workEnd) workEnd.value = d.workEnd || "";
+      if (lunchStart) lunchStart.value = d.lunchStart || "";
+      if (lunchEnd) lunchEnd.value = d.lunchEnd || "";
     } else {
-      // No schedule found for this date
-      workStart.value = "";
-      workEnd.value = "";
-      lunchStart.value = "";
-      lunchEnd.value = "";
+      if (workStart) workStart.value = "";
+      if (workEnd) workEnd.value = "";
+      if (lunchStart) lunchStart.value = "";
+      if (lunchEnd) lunchEnd.value = "";
     }
-    schedSavingIndicator.textContent = "";
+    if (schedSavingIndicator) {
+      schedSavingIndicator.textContent = "";
+    }
     isLoadingSchedule = false;
     render();
   } catch (e) {
     console.error("Error loading schedule:", e);
-    schedSavingIndicator.textContent = "Error loading schedule";
+    if (schedSavingIndicator) {
+      schedSavingIndicator.textContent = "Error loading schedule";
+    }
     isLoadingSchedule = false;
   }
 }
 
 function scheduleChanged() {
-  if (isLoadingSchedule) return; // Don't save while loading
+  if (isLoadingSchedule) return;
   clearTimeout(schedSaveTimeout);
-  schedSavingIndicator.textContent = "Saving…";
+  if (schedSavingIndicator) {
+    schedSavingIndicator.textContent = "Saving…";
+  }
   schedSaveTimeout = setTimeout(saveSchedule, 900);
 }
 
@@ -509,36 +535,40 @@ async function saveSchedule() {
     await setDoc(doc(db, "workSchedules", scheduleDocId()), {
       uid: UID,
       date: dateInputValue(selectedDate),
-      workStart:  workStart.value  || null,
-      workEnd:    workEnd.value    || null,
-      lunchStart: lunchStart.value || null,
-      lunchEnd:   lunchEnd.value   || null,
+      workStart:  workStart?.value || null,
+      workEnd:    workEnd?.value || null,
+      lunchStart: lunchStart?.value || null,
+      lunchEnd:   lunchEnd?.value || null,
       lastModified: new Date()
     }, { merge: true });
-    schedSavingIndicator.textContent = "✓ Saved";
-    setTimeout(() => { 
-      if (schedSavingIndicator.textContent === "✓ Saved") {
-        schedSavingIndicator.textContent = ""; 
-      }
-    }, 2000);
+    if (schedSavingIndicator) {
+      schedSavingIndicator.textContent = "✓ Saved";
+      setTimeout(() => { 
+        if (schedSavingIndicator && schedSavingIndicator.textContent === "✓ Saved") {
+          schedSavingIndicator.textContent = ""; 
+        }
+      }, 2000);
+    }
   } catch (e) {
     console.error("Error saving schedule:", e);
-    schedSavingIndicator.textContent = "Error saving: " + e.message;
+    if (schedSavingIndicator) {
+      schedSavingIndicator.textContent = "Error saving: " + e.message;
+    }
   }
   render();
 }
 
-workStart.addEventListener("change",  () => scheduleChanged());
-workEnd.addEventListener("change",    () => scheduleChanged());
-lunchStart.addEventListener("change", () => scheduleChanged());
-lunchEnd.addEventListener("change",   () => scheduleChanged());
+if (workStart) workStart.addEventListener("change", () => scheduleChanged());
+if (workEnd) workEnd.addEventListener("change", () => scheduleChanged());
+if (lunchStart) lunchStart.addEventListener("change", () => scheduleChanged());
+if (lunchEnd) lunchEnd.addEventListener("change", () => scheduleChanged());
 
 // ---- compute schedule hours ----
 function computeScheduleInfo() {
-  const ws = timeToMins(workStart.value);
-  const we = timeToMins(workEnd.value);
-  const ls = timeToMins(lunchStart.value);
-  const le = timeToMins(lunchEnd.value);
+  const ws = timeToMins(workStart?.value);
+  const we = timeToMins(workEnd?.value);
+  const ls = timeToMins(lunchStart?.value);
+  const le = timeToMins(lunchEnd?.value);
 
   if (ws === null || we === null) return { targetMins: 0, lunchMins: 0, valid: false };
 
@@ -551,11 +581,15 @@ function computeScheduleInfo() {
 }
 
 // ---- start-time field ----
-function primeStartTime() { startTimeInput.value = timeInputValue(new Date()); }
+function primeStartTime() {
+  if (startTimeInput) {
+    startTimeInput.value = timeInputValue(new Date());
+  }
+}
 primeStartTime();
 
 function startDateFromInput() {
-  const v = startTimeInput.value;
+  const v = startTimeInput?.value;
   const base = new Date(selectedDate);
   if (!v) return base;
   const [h, m] = v.split(":").map(Number);
@@ -567,48 +601,68 @@ function startDateFromInput() {
 function startTicking() {
   stopTicking();
   tickHandle = setInterval(() => {
-    if (!runningEntry) return;
+    if (!runningEntry || !elapsedEl) return;
     const secs = (Date.now() - runningEntry.start.toMillis()) / 1000;
     elapsedEl.textContent = fmtStopwatch(secs);
   }, 1000);
 }
-function stopTicking() { if (tickHandle) clearInterval(tickHandle); tickHandle = null; }
+function stopTicking() {
+  if (tickHandle) clearInterval(tickHandle);
+  tickHandle = null;
+}
 
 // ---- START ----
-startBtn.addEventListener("click", async () => {
-  const task = taskInput.value.trim();
-  if (!task) { setStatus("Please enter a task name."); taskInput.focus(); return; }
-  if (runningEntry) { setStatus("Stop the current timer first."); return; }
-  const start = startDateFromInput();
-  setStatus("Starting…");
-  try {
-    await addDoc(entriesRef, {
-      uid: UID, task, note: noteInput.value.trim(),
-      start: Timestamp.fromDate(start), end: null, durationMins: 0
-    });
-    setStatus("");
-  } catch (e) { setStatus("Error: " + e.message); }
-});
+if (startBtn) {
+  startBtn.addEventListener("click", async () => {
+    const task = taskInput?.value?.trim();
+    if (!task) {
+      setStatus("Please enter a task name.");
+      if (taskInput) taskInput.focus();
+      return;
+    }
+    if (runningEntry) {
+      setStatus("Stop the current timer first.");
+      return;
+    }
+    const start = startDateFromInput();
+    setStatus("Starting…");
+    try {
+      await addDoc(entriesRef, {
+        uid: UID, task, note: noteInput?.value?.trim() || "",
+        start: Timestamp.fromDate(start), end: null, durationMins: 0
+      });
+      setStatus("");
+    } catch (e) {
+      setStatus("Error: " + e.message);
+    }
+  });
+}
 
 // ---- STOP ----
-stopBtn.addEventListener("click", async () => {
-  if (!runningEntry) return;
-  const end = new Date();
-  const mins = (end - runningEntry.start.toDate()) / 60000;
-  setStatus("Stopping…");
-  try {
-    await updateDoc(doc(db, "timeEntries", runningEntry.id), {
-      end: Timestamp.fromDate(end),
-      durationMins: Math.max(0, mins)
-    });
-    taskInput.value = "";
-    noteInput.value = "";
-    primeStartTime();
-    setStatus("");
-  } catch (e) { setStatus("Error: " + e.message); }
-});
+if (stopBtn) {
+  stopBtn.addEventListener("click", async () => {
+    if (!runningEntry) return;
+    const end = new Date();
+    const mins = (end - runningEntry.start.toDate()) / 60000;
+    setStatus("Stopping…");
+    try {
+      await updateDoc(doc(db, "timeEntries", runningEntry.id), {
+        end: Timestamp.fromDate(end),
+        durationMins: Math.max(0, mins)
+      });
+      if (taskInput) taskInput.value = "";
+      if (noteInput) noteInput.value = "";
+      primeStartTime();
+      setStatus("");
+    } catch (e) {
+      setStatus("Error: " + e.message);
+    }
+  });
+}
 
-function setStatus(msg) { statusEl.textContent = msg; }
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = msg;
+}
 
 // ---- load entries ----
 function loadEntriesForDate() {
@@ -632,31 +686,42 @@ function loadEntriesForDate() {
 onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
   allTaskNames = new Set();
   snap.forEach(d => { const t = d.data().task; if (t) allTaskNames.add(t); });
-  taskList.innerHTML = "";
-  [...allTaskNames].sort().forEach(t => {
-    const o = document.createElement("option"); o.value = t; taskList.appendChild(o);
-  });
+  if (taskList) {
+    taskList.innerHTML = "";
+    [...allTaskNames].sort().forEach(t => {
+      const o = document.createElement("option");
+      o.value = t;
+      taskList.appendChild(o);
+    });
+  }
 });
 
 // ---- build timeline ----
 function renderTimeline() {
   const info = computeScheduleInfo();
-  if (!info.valid) { timelinePanel.style.display = "none"; return; }
+  if (!info.valid) {
+    if (timelinePanel) timelinePanel.style.display = "none";
+    return;
+  }
 
   const { ws, we, ls, le, lunchMins } = info;
   const totalSpan = we - ws;
-  if (totalSpan <= 0) { timelinePanel.style.display = "none"; return; }
+  if (totalSpan <= 0) {
+    if (timelinePanel) timelinePanel.style.display = "none";
+    return;
+  }
 
-  timelinePanel.style.display = "block";
+  if (timelinePanel) timelinePanel.style.display = "block";
 
   // labels
-  timelineStartEl.textContent = workStart.value;
-  timelineEndEl.textContent   = workEnd.value;
-  const midMins = Math.floor((ws + we) / 2);
-  timelineMidEl.textContent = `${pad(Math.floor(midMins/60))}:${pad(midMins%60)}`;
+  if (timelineStartEl) timelineStartEl.textContent = workStart?.value || "";
+  if (timelineEndEl) timelineEndEl.textContent = workEnd?.value || "";
+  if (timelineMidEl) {
+    const midMins = Math.floor((ws + we) / 2);
+    timelineMidEl.textContent = `${pad(Math.floor(midMins/60))}:${pad(midMins%60)}`;
+  }
 
-  // build a list of {startM, endM, type, task} covering ws..we
-  // 1) collect all intervals in order: time entries + optional lunch
+  // build a list of {startM, endM, type, task}
   const intervals = [];
 
   // add lunch interval if defined
@@ -664,7 +729,7 @@ function renderTimeline() {
     intervals.push({ startM: ls, endM: le, type: "lunch" });
   }
 
-  // add completed task entries, clamped to work day
+  // add completed task entries
   entries.filter(e => e.end).forEach(entry => {
     const sd = entry.start.toDate();
     const ed = entry.end.toDate();
@@ -677,22 +742,18 @@ function renderTimeline() {
     }
   });
 
-  // sort all intervals by start
   intervals.sort((a,b) => a.startM - b.startM);
 
-  // merge overlapping task intervals (lunch is not merged with tasks)
-  // build final blocks by walking the timeline
   const blocks = [];
   let cursor = ws;
 
   for (const iv of intervals) {
     if (iv.startM >= we) break;
     const blockStart = Math.max(iv.startM, ws);
-    const blockEnd   = Math.min(iv.endM, we);
+    const blockEnd = Math.min(iv.endM, we);
     if (blockEnd <= blockStart) continue;
 
     if (blockStart > cursor) {
-      // gap before this interval
       blocks.push({ startM: cursor, endM: blockStart, type: "unallocated" });
     }
     if (blockStart >= cursor) {
@@ -705,7 +766,9 @@ function renderTimeline() {
   }
 
   // render
-  timelineBar.innerHTML = "";
+  if (timelineBar) {
+    timelineBar.innerHTML = "";
+  }
   const legend = new Map();
   let hasUnallocated = false;
 
@@ -730,64 +793,77 @@ function renderTimeline() {
       seg.textContent = "Unallocated";
       hasUnallocated = true;
     }
-    timelineBar.appendChild(seg);
+    if (timelineBar) timelineBar.appendChild(seg);
   });
 
   // legend
-  timelineLegend.innerHTML = "";
-  legend.forEach((colour, task) => {
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    const sw = document.createElement("div");
-    sw.className = "legend-swatch";
-    sw.style.background = colour;
-    const lbl = document.createElement("span");
-    lbl.textContent = task;
-    item.appendChild(sw); item.appendChild(lbl);
-    timelineLegend.appendChild(item);
-  });
+  if (timelineLegend) {
+    timelineLegend.innerHTML = "";
+    legend.forEach((colour, task) => {
+      const item = document.createElement("div");
+      item.className = "legend-item";
+      const sw = document.createElement("div");
+      sw.className = "legend-swatch";
+      sw.style.background = colour;
+      const lbl = document.createElement("span");
+      lbl.textContent = task;
+      item.appendChild(sw);
+      item.appendChild(lbl);
+      timelineLegend.appendChild(item);
+    });
 
-  // lunch in legend
-  if (ls !== null && le !== null && le > ls) {
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    const sw = document.createElement("div");
-    sw.className = "legend-swatch";
-    sw.style.background = "var(--lunch-color)";
-    const lbl = document.createElement("span");
-    lbl.textContent = "Lunch";
-    item.appendChild(sw); item.appendChild(lbl);
-    timelineLegend.appendChild(item);
-  }
+    // lunch in legend
+    if (ls !== null && le !== null && le > ls) {
+      const item = document.createElement("div");
+      item.className = "legend-item";
+      const sw = document.createElement("div");
+      sw.className = "legend-swatch";
+      sw.style.background = "var(--lunch-color)";
+      const lbl = document.createElement("span");
+      lbl.textContent = "Lunch";
+      item.appendChild(sw);
+      item.appendChild(lbl);
+      timelineLegend.appendChild(item);
+    }
 
-  if (hasUnallocated) {
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    const sw = document.createElement("div");
-    sw.className = "legend-swatch";
-    sw.style.background = "var(--unallocated)";
-    const lbl = document.createElement("span");
-    lbl.textContent = "Unallocated";
-    item.appendChild(sw); item.appendChild(lbl);
-    timelineLegend.appendChild(item);
+    if (hasUnallocated) {
+      const item = document.createElement("div");
+      item.className = "legend-item";
+      const sw = document.createElement("div");
+      sw.className = "legend-swatch";
+      sw.style.background = "var(--unallocated)";
+      const lbl = document.createElement("span");
+      lbl.textContent = "Unallocated";
+      item.appendChild(sw);
+      item.appendChild(lbl);
+      timelineLegend.appendChild(item);
+    }
   }
 }
 
 // ---- render ----
 function render() {
+  // Safety check
+  if (!logBody || !dailyTotalEl || !summaryEl) {
+    console.warn("Critical DOM elements not initialised");
+    return;
+  }
+
   if (runningEntry) {
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    elapsedEl.classList.remove("idle");
-    taskInput.value = runningEntry.task;
-    noteInput.value = runningEntry.note || "";
-    startTimeInput.value = timeInputValue(runningEntry.start.toDate());
+    if (startBtn) startBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = false;
+    if (elapsedEl) elapsedEl.classList.remove("idle");
+    if (taskInput) taskInput.value = runningEntry.task;
+    if (noteInput) noteInput.value = runningEntry.note || "";
+    if (startTimeInput) startTimeInput.value = timeInputValue(runningEntry.start.toDate());
     startTicking();
   } else {
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    elapsedEl.classList.add("idle");
-    elapsedEl.textContent = "00:00:00";
+    if (startBtn) startBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = true;
+    if (elapsedEl) {
+      elapsedEl.classList.add("idle");
+      elapsedEl.textContent = "00:00:00";
+    }
     stopTicking();
   }
 
@@ -809,14 +885,16 @@ function render() {
 
     const tdStart = document.createElement("td");
     const startIn = document.createElement("input");
-    startIn.type = "time"; startIn.value = fmtHM(startD);
+    startIn.type = "time";
+    startIn.value = fmtHM(startD);
     startIn.addEventListener("change", () => editTime(e, "start", startIn.value));
     tdStart.appendChild(startIn);
 
     const tdEnd = document.createElement("td");
     if (endD) {
       const endIn = document.createElement("input");
-      endIn.type = "time"; endIn.value = fmtHM(endD);
+      endIn.type = "time";
+      endIn.value = fmtHM(endD);
       endIn.addEventListener("change", () => editTime(e, "end", endIn.value));
       tdEnd.appendChild(endIn);
     } else {
@@ -829,19 +907,23 @@ function render() {
 
     const tdTask = document.createElement("td");
     const taskIn = document.createElement("input");
-    taskIn.type = "text"; taskIn.value = e.task;
+    taskIn.type = "text";
+    taskIn.value = e.task;
     taskIn.addEventListener("change", () => editField(e, "task", taskIn.value.trim()));
     tdTask.appendChild(taskIn);
 
     const tdNote = document.createElement("td");
     const noteIn = document.createElement("input");
-    noteIn.type = "text"; noteIn.value = e.note || "";
+    noteIn.type = "text";
+    noteIn.value = e.note || "";
     noteIn.addEventListener("change", () => editField(e, "note", noteIn.value.trim()));
     tdNote.appendChild(noteIn);
 
     const tdDel = document.createElement("td");
     const delBtn = document.createElement("button");
-    delBtn.className = "row-del"; delBtn.textContent = "✕"; delBtn.title = "Delete";
+    delBtn.className = "row-del";
+    delBtn.textContent = "✕";
+    delBtn.title = "Delete";
     delBtn.addEventListener("click", () => removeEntry(e));
     tdDel.appendChild(delBtn);
 
@@ -854,14 +936,14 @@ function render() {
   // schedule info
   const info = computeScheduleInfo();
   const unloggedMins = Math.max(0, info.targetMins - totalMins);
-  targetHoursEl.textContent = fmtDuration(info.targetMins);
-  loggedHoursEl.textContent  = fmtDuration(totalMins);
-  unloggedHoursEl.textContent = fmtDuration(unloggedMins);
-  lunchDurationEl.textContent = info.lunchMins > 0 ? fmtDuration(info.lunchMins) : "—";
+  if (targetHoursEl) targetHoursEl.textContent = fmtDuration(info.targetMins);
+  if (loggedHoursEl) loggedHoursEl.textContent = fmtDuration(totalMins);
+  if (unloggedHoursEl) unloggedHoursEl.textContent = fmtDuration(unloggedMins);
+  if (lunchDurationEl) lunchDurationEl.textContent = info.lunchMins > 0 ? fmtDuration(info.lunchMins) : "—";
 
-  if (unloggedMins > 0 && info.valid) {
+  if (unloggedMins > 0 && info.valid && unloggedHoursEl) {
     unloggedHoursEl.parentElement.classList.add("gap-warning");
-  } else {
+  } else if (unloggedHoursEl) {
     unloggedHoursEl.parentElement.classList.remove("gap-warning");
   }
 
@@ -869,7 +951,7 @@ function render() {
 
   // summary
   summaryEl.innerHTML = "";
-  const tasks = Object.keys(byTask).sort((a,b) => byTask[b] - byTask[a]);
+  const tasks = Object.keys(byTask).sort((a, b) => byTask[b] - byTask[a]);
   if (!tasks.length) {
     summaryEl.innerHTML = '<div style="color:var(--muted)">No completed entries for this day.</div>';
   } else {
@@ -883,11 +965,6 @@ function render() {
   }
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
-
 // ---- inline edits ----
 async function editTime(entry, field, value) {
   if (!value) return;
@@ -895,22 +972,31 @@ async function editTime(entry, field, value) {
   const base = entry[field] ? entry[field].toDate() : new Date();
   base.setHours(h, m, 0, 0);
   const update = { [field]: Timestamp.fromDate(base) };
-  const s  = field === "start" ? base : entry.start.toDate();
-  const en = field === "end"   ? base : (entry.end ? entry.end.toDate() : null);
+  const s = field === "start" ? base : entry.start.toDate();
+  const en = field === "end" ? base : (entry.end ? entry.end.toDate() : null);
   if (en) update.durationMins = Math.max(0, (en - s) / 60000);
-  try { await updateDoc(doc(db, "timeEntries", entry.id), update); }
-  catch (e) { setStatus("Error: " + e.message); }
+  try {
+    await updateDoc(doc(db, "timeEntries", entry.id), update);
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
 }
 
 async function editField(entry, field, value) {
-  try { await updateDoc(doc(db, "timeEntries", entry.id), { [field]: value }); }
-  catch (e) { setStatus("Error: " + e.message); }
+  try {
+    await updateDoc(doc(db, "timeEntries", entry.id), { [field]: value });
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
 }
 
 async function removeEntry(entry) {
   if (!confirm("Delete this entry?")) return;
-  try { await deleteDoc(doc(db, "timeEntries", entry.id)); }
-  catch (e) { setStatus("Error: " + e.message); }
+  try {
+    await deleteDoc(doc(db, "timeEntries", entry.id));
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
 }
 
 // ---- initial load ----
