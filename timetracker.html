@@ -17,6 +17,7 @@
     --muted: #8a97a5;
     --border: #2c3845;
     --unallocated: #3a424d;
+    --lunch-color: #8a6bbf;
   }
   * { box-sizing: border-box; }
   body {
@@ -59,9 +60,9 @@
 
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
   .grid .full { grid-column: 1 / -1; }
-  .grid .col3 { grid-template-columns: 1fr 1fr 1fr; }
-  .grid.col3 > div { grid-column: auto; }
-  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .grid.col3 { grid-template-columns: 1fr; } }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .grid4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 420px) { .grid4 { grid-template-columns: 1fr; } }
 
   #elapsed {
     font-size: 2.6rem;
@@ -92,9 +93,7 @@
   .start-time-row > div { flex: 1; }
 
   /* ---- TIMELINE STYLES ---- */
-  .timeline-wrapper {
-    margin-top: 16px;
-  }
+  .timeline-wrapper { margin-top: 16px; }
   .timeline-labels {
     display: flex;
     justify-content: space-between;
@@ -128,10 +127,8 @@
   }
   .timeline-segment:hover { opacity: 0.8; }
   .timeline-segment:last-child { border-right: none; }
-  .timeline-unallocated {
-    background: var(--unallocated);
-    color: var(--muted);
-  }
+  .timeline-unallocated { background: var(--unallocated); color: var(--muted); }
+  .timeline-lunch { background: var(--lunch-color); color: #fff; }
   .timeline-legend {
     display: flex;
     flex-wrap: wrap;
@@ -139,16 +136,8 @@
     margin-top: 10px;
     font-size: 0.8rem;
   }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .legend-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -187,10 +176,30 @@
   .sched-line.highlight { font-weight: 600; color: var(--accent); }
   .sched-line.gap-warning { color: var(--warning); }
 
+  .schedule-section-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .schedule-subsection { margin-bottom: 14px; }
+
   .date-nav { display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 14px; }
   .date-nav button { padding: 8px 12px; background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; }
   .date-nav button:hover { border-color: var(--accent); }
   .date-nav input[type="date"] { width: 160px; }
+
+  .saving-indicator {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 8px;
+    min-height: 16px;
+    transition: opacity 0.3s;
+  }
 </style>
 </head>
 <body>
@@ -214,25 +223,36 @@
   <!-- WORK SCHEDULE -->
   <div class="panel">
     <h2>Work Schedule</h2>
-    <div class="grid col3">
-      <div>
-        <label for="workStart">Start Time</label>
-        <input type="time" id="workStart" placeholder="09:00">
-      </div>
-      <div>
-        <label for="workEnd">End Time</label>
-        <input type="time" id="workEnd" placeholder="17:00">
-      </div>
-      <div>
-        <label for="lunchMins">Lunch (mins)</label>
-        <input type="number" id="lunchMins" value="30" min="0" max="120">
+
+    <div class="schedule-subsection">
+      <div class="schedule-section-label">Working hours</div>
+      <div class="grid4">
+        <div>
+          <label for="workStart">Start</label>
+          <input type="time" id="workStart">
+        </div>
+        <div>
+          <label for="workEnd">End</label>
+          <input type="time" id="workEnd">
+        </div>
+        <div>
+          <label for="lunchStart">Lunch start</label>
+          <input type="time" id="lunchStart">
+        </div>
+        <div>
+          <label for="lunchEnd">Lunch end</label>
+          <input type="time" id="lunchEnd">
+        </div>
       </div>
     </div>
+
     <div class="schedule-display">
       <div class="sched-line"><span>Target Hours:</span><span id="targetHours" class="dur">0h 00m</span></div>
+      <div class="sched-line"><span>Lunch Break:</span><span id="lunchDuration" class="dur">—</span></div>
       <div class="sched-line"><span>Logged Hours:</span><span id="loggedHours" class="dur">0h 00m</span></div>
       <div class="sched-line highlight"><span>Unlogged Hours:</span><span id="unloggedHours" class="dur">0h 00m</span></div>
     </div>
+    <div class="saving-indicator" id="schedSavingindicator"></div>
   </div>
 
   <!-- TIMELINE -->
@@ -312,10 +332,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
-  query, where, orderBy, onSnapshot, Timestamp
+  query, where, orderBy, onSnapshot, Timestamp, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ---- Firebase config ----
 const firebaseConfig = {
   apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
   authDomain: "teamdennisontracker.firebaseapp.com",
@@ -327,8 +346,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const entriesRef = collection(db, "timeEntries");
+const schedulesRef = collection(db, "workSchedules");
 
-// ---- when Auth is added later, set this to the logged-in user's uid ----
 const UID = "default-user";
 
 // ---- DOM refs ----
@@ -341,21 +360,24 @@ const elapsedEl = $("elapsed"), statusEl = $("status");
 const logBody = $("logBody"), dailyTotalEl = $("dailyTotal"), summaryEl = $("summary");
 const taskList = $("taskList");
 const timerPanel = $("timerPanel"), logTitle = $("logTitle");
-const workStart = $("workStart"), workEnd = $("workEnd"), lunchMins = $("lunchMins");
-const targetHoursEl = $("targetHours"), loggedHoursEl = $("loggedHours"), unloggedHoursEl = $("unloggedHours");
+const workStart = $("workStart"), workEnd = $("workEnd");
+const lunchStart = $("lunchStart"), lunchEnd = $("lunchEnd");
+const targetHoursEl = $("targetHours"), loggedHoursEl = $("loggedHours");
+const unloggedHoursEl = $("unloggedHours"), lunchDurationEl = $("lunchDuration");
 const timelinePanel = $("timelinePanel"), timelineBar = $("timelineBar"), timelineLegend = $("timelineLegend");
-const timelineStart = $("timelineStart"), timelineMid = $("timelineMid"), timelineEnd = $("timelineEnd");
+const timelineStartEl = $("timelineStart"), timelineMidEl = $("timelineMid"), timelineEndEl = $("timelineEnd");
+const schedSavingIndicator = $("schedSavingIndicator");
 
-let selectedDate = new Date();  // the date being viewed
-let entries = [];              // entries for the selected date
+let selectedDate = new Date();
+let entries = [];
 let allTaskNames = new Set();
-let runningEntry = null;       // the doc with end == null
+let runningEntry = null;
 let tickHandle = null;
-let unsubscribe = null;        // Firestore listener handle
+let unsubscribe = null;
+let schedSaveTimeout = null;
 
 // ---- helpers ----
 const pad = n => String(n).padStart(2, "0");
-
 function fmtClock(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
 function fmtDate(d) {
   return d.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
@@ -363,9 +385,8 @@ function fmtDate(d) {
 function fmtHM(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}`; }
 function timeInputValue(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function dateInputValue(d) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
-
 function fmtDuration(mins) {
   const h = Math.floor(mins / 60), m = Math.round(mins % 60);
   return `${h}h ${pad(m)}m`;
@@ -376,30 +397,22 @@ function fmtStopwatch(secs) {
   const s = Math.floor(secs % 60);
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
-
-function startOfDate(d) {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-function endOfDate(d) {
-  const copy = new Date(d);
-  copy.setHours(23, 59, 59, 999);
-  return copy;
+function startOfDate(d) { const c = new Date(d); c.setHours(0,0,0,0); return c; }
+function endOfDate(d) { const c = new Date(d); c.setHours(23,59,59,999); return c; }
+function dateStringsMatch(d1, d2) { return dateInputValue(d1) === dateInputValue(d2); }
+function timeToMins(t) {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
 }
 
-function dateStringsMatch(d1, d2) {
-  return dateInputValue(d1) === dateInputValue(d2);
-}
-
-// ---- colour scheme for tasks (cycle through palette) ----
+// ---- colour scheme ----
 const taskColours = [
-  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
-  "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B88B", "#52B788"
+  "#FF6B6B","#4ECDC4","#45B7D1","#FFA07A","#98D8C8",
+  "#F7DC6F","#BB8FCE","#85C1E2","#F8B88B","#52B788"
 ];
 const taskColourMap = {};
 let colourIndex = 0;
-
 function getTaskColour(task) {
   if (!taskColourMap[task]) {
     taskColourMap[task] = taskColours[colourIndex % taskColours.length];
@@ -427,38 +440,107 @@ function updateDateInput() {
 }
 updateDateInput();
 
-dateInput.addEventListener("change", (e) => {
+dateInput.addEventListener("change", e => {
   if (e.target.value) {
-    const [y, m, d] = e.target.value.split("-").map(Number);
-    selectedDate = new Date(y, m - 1, d);
+    const [y,m,d] = e.target.value.split("-").map(Number);
+    selectedDate = new Date(y, m-1, d);
     updateDateInput();
+    loadScheduleForDate();
     loadEntriesForDate();
   }
 });
-
 prevDayBtn.addEventListener("click", () => {
   selectedDate.setDate(selectedDate.getDate() - 1);
-  updateDateInput();
-  loadEntriesForDate();
+  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
 });
-
 nextDayBtn.addEventListener("click", () => {
   selectedDate.setDate(selectedDate.getDate() + 1);
-  updateDateInput();
-  loadEntriesForDate();
+  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
 });
-
 todayBtn.addEventListener("click", () => {
   selectedDate = new Date();
-  updateDateInput();
-  loadEntriesForDate();
+  updateDateInput(); loadScheduleForDate(); loadEntriesForDate();
 });
 
-// ---- prime the start-time field with "now" ----
+// ---- schedule: Firestore load / save ----
+function scheduleDocId() {
+  return `${UID}_${dateInputValue(selectedDate)}`;
+}
+
+async function loadScheduleForDate() {
+  // Reset fields while loading
+  workStart.value = "";
+  workEnd.value = "";
+  lunchStart.value = "";
+  lunchEnd.value = "";
+  schedSavingIndicator.textContent = "Loading schedule…";
+
+  try {
+    const snap = await getDoc(doc(db, "workSchedules", scheduleDocId()));
+    if (snap.exists()) {
+      const d = snap.data();
+      workStart.value  = d.workStart  || "";
+      workEnd.value    = d.workEnd    || "";
+      lunchStart.value = d.lunchStart || "";
+      lunchEnd.value   = d.lunchEnd   || "";
+    }
+    schedSavingIndicator.textContent = "";
+  } catch (e) {
+    schedSavingIndicator.textContent = "Error loading schedule";
+  }
+  render();
+}
+
+function scheduleChanged() {
+  clearTimeout(schedSaveTimeout);
+  schedSavingIndicator.textContent = "Saving…";
+  schedSaveTimeout = setTimeout(saveSchedule, 900);
+}
+
+async function saveSchedule() {
+  try {
+    await setDoc(doc(db, "workSchedules", scheduleDocId()), {
+      uid: UID,
+      date: dateInputValue(selectedDate),
+      workStart:  workStart.value  || null,
+      workEnd:    workEnd.value    || null,
+      lunchStart: lunchStart.value || null,
+      lunchEnd:   lunchEnd.value   || null,
+    });
+    schedSavingIndicator.textContent = "Schedule saved";
+    setTimeout(() => { schedSavingIndicator.textContent = ""; }, 2000);
+  } catch (e) {
+    schedSavingIndicator.textContent = "Error saving schedule: " + e.message;
+  }
+  render();
+}
+
+workStart.addEventListener("change",  () => scheduleChanged());
+workEnd.addEventListener("change",    () => scheduleChanged());
+lunchStart.addEventListener("change", () => scheduleChanged());
+lunchEnd.addEventListener("change",   () => scheduleChanged());
+
+// ---- compute schedule hours ----
+function computeScheduleInfo() {
+  const ws = timeToMins(workStart.value);
+  const we = timeToMins(workEnd.value);
+  const ls = timeToMins(lunchStart.value);
+  const le = timeToMins(lunchEnd.value);
+
+  if (ws === null || we === null) return { targetMins: 0, lunchMins: 0, valid: false };
+
+  let lunchMins = 0;
+  if (ls !== null && le !== null && le > ls) {
+    lunchMins = le - ls;
+  }
+  const targetMins = Math.max(0, we - ws - lunchMins);
+  return { targetMins, lunchMins, ws, we, ls, le, valid: true };
+}
+
+// ---- start-time field ----
 function primeStartTime() { startTimeInput.value = timeInputValue(new Date()); }
 primeStartTime();
 
-// ---- build a Date from the time input, using the selected date ----
 function startDateFromInput() {
   const v = startTimeInput.value;
   const base = new Date(selectedDate);
@@ -468,7 +550,7 @@ function startDateFromInput() {
   return base;
 }
 
-// ---- stopwatch tick ----
+// ---- stopwatch ----
 function startTicking() {
   stopTicking();
   tickHandle = setInterval(() => {
@@ -484,17 +566,12 @@ startBtn.addEventListener("click", async () => {
   const task = taskInput.value.trim();
   if (!task) { setStatus("Please enter a task name."); taskInput.focus(); return; }
   if (runningEntry) { setStatus("Stop the current timer first."); return; }
-
   const start = startDateFromInput();
   setStatus("Starting…");
   try {
     await addDoc(entriesRef, {
-      uid: UID,
-      task,
-      note: noteInput.value.trim(),
-      start: Timestamp.fromDate(start),
-      end: null,
-      durationMins: 0
+      uid: UID, task, note: noteInput.value.trim(),
+      start: Timestamp.fromDate(start), end: null, durationMins: 0
     });
     setStatus("");
   } catch (e) { setStatus("Error: " + e.message); }
@@ -520,10 +597,9 @@ stopBtn.addEventListener("click", async () => {
 
 function setStatus(msg) { statusEl.textContent = msg; }
 
-// ---- load entries for the selected date ----
+// ---- load entries ----
 function loadEntriesForDate() {
   if (unsubscribe) unsubscribe();
-  
   const q = query(
     entriesRef,
     where("uid", "==", UID),
@@ -531,7 +607,6 @@ function loadEntriesForDate() {
     where("start", "<=", Timestamp.fromDate(endOfDate(selectedDate))),
     orderBy("start", "asc")
   );
-
   unsubscribe = onSnapshot(q, snap => {
     entries = [];
     snap.forEach(d => entries.push({ id: d.id, ...d.data() }));
@@ -540,7 +615,7 @@ function loadEntriesForDate() {
   }, err => setStatus("Listener error: " + err.message));
 }
 
-// ---- separate listener (all time) to build the task autocomplete list ----
+// ---- task autocomplete ----
 onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
   allTaskNames = new Set();
   snap.forEach(d => { const t = d.data().task; if (t) allTaskNames.add(t); });
@@ -550,171 +625,143 @@ onSnapshot(query(entriesRef, where("uid", "==", UID)), snap => {
   });
 });
 
-// ---- work schedule storage (localStorage) ----
-function saveSchedule() {
-  localStorage.setItem("workSchedule", JSON.stringify({
-    start: workStart.value,
-    end: workEnd.value,
-    lunch: parseInt(lunchMins.value) || 0
-  }));
-}
-
-function loadSchedule() {
-  const saved = localStorage.getItem("workSchedule");
-  if (saved) {
-    const { start, end, lunch } = JSON.parse(saved);
-    workStart.value = start || "";
-    workEnd.value = end || "";
-    lunchMins.value = lunch || 30;
-  }
-}
-
-workStart.addEventListener("change", saveSchedule);
-workEnd.addEventListener("change", saveSchedule);
-lunchMins.addEventListener("change", saveSchedule);
-
-loadSchedule();
-
-// ---- compute schedule hours ----
-function computeScheduleHours() {
-  const s = workStart.value, e = workEnd.value, l = parseInt(lunchMins.value) || 0;
-  if (!s || !e) return 0;
-  const [sh, sm] = s.split(":").map(Number);
-  const [eh, em] = e.split(":").map(Number);
-  const startMins = sh * 60 + sm;
-  const endMins = eh * 60 + em;
-  return Math.max(0, endMins - startMins - l);
-}
-
-// ---- time to minutes since midnight ----
-function timeToMins(timeStr) {
-  if (!timeStr) return 0;
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
-}
-
 // ---- build timeline ----
 function renderTimeline() {
-  const s = workStart.value, e = workEnd.value, l = parseInt(lunchMins.value) || 0;
-  if (!s || !e) {
-    timelinePanel.style.display = "none";
-    return;
-  }
+  const info = computeScheduleInfo();
+  if (!info.valid) { timelinePanel.style.display = "none"; return; }
+
+  const { ws, we, ls, le, lunchMins } = info;
+  const totalSpan = we - ws;
+  if (totalSpan <= 0) { timelinePanel.style.display = "none"; return; }
 
   timelinePanel.style.display = "block";
 
-  // parse schedule
-  const startMins = timeToMins(s);
-  const endMins = timeToMins(e);
-  const totalMins = endMins - startMins - l;
+  // labels
+  timelineStartEl.textContent = workStart.value;
+  timelineEndEl.textContent   = workEnd.value;
+  const midMins = Math.floor((ws + we) / 2);
+  timelineMidEl.textContent = `${pad(Math.floor(midMins/60))}:${pad(midMins%60)}`;
 
-  if (totalMins <= 0) {
-    timelinePanel.style.display = "none";
-    return;
+  // build a list of {startM, endM, type, task} covering ws..we
+  // 1) collect all intervals in order: time entries + optional lunch
+  const intervals = [];
+
+  // add lunch interval if defined
+  if (ls !== null && le !== null && le > ls) {
+    intervals.push({ startM: ls, endM: le, type: "lunch" });
   }
 
-  // update labels
-  timelineStart.textContent = s;
-  timelineEnd.textContent = e;
-  const midMins = Math.floor((startMins + endMins) / 2);
-  timelineMid.textContent = `${pad(Math.floor(midMins / 60))}:${pad(midMins % 60)}`;
-
-  // build timeline segments from work day
-  // strategy: create a list of [start, end, task] blocks covering the work day
-  const blocks = [];
-  let currentMins = startMins;
-
-  // sort entries by start time
-  const sortedEntries = [...entries]
-    .filter(e => e.end) // only completed entries
-    .sort((a, b) => a.start.toDate() - b.start.toDate());
-
-  // find entries that overlap with work day
-  sortedEntries.forEach(entry => {
-    const entryStart = entry.start.toDate();
-    const entryEnd = entry.end.toDate();
-    const entryStartMins = entryStart.getHours() * 60 + entryStart.getMinutes();
-    const entryEndMins = entryEnd.getHours() * 60 + entryEnd.getMinutes();
-
-    // only consider entries within work day
-    if (entryEndMins <= startMins || entryStartMins >= endMins) return;
-
-    // clamp to work day
-    const clampStart = Math.max(entryStartMins, startMins);
-    const clampEnd = Math.min(entryEndMins, endMins);
-
-    if (clampStart < clampEnd) {
-      // if there's a gap before this entry, add unallocated block
-      if (clampStart > currentMins) {
-        blocks.push({ start: currentMins, end: clampStart, task: null });
-      }
-      blocks.push({ start: clampStart, end: clampEnd, task: entry.task });
-      currentMins = clampEnd;
+  // add completed task entries, clamped to work day
+  entries.filter(e => e.end).forEach(entry => {
+    const sd = entry.start.toDate();
+    const ed = entry.end.toDate();
+    const sm = sd.getHours()*60 + sd.getMinutes();
+    const em = ed.getHours()*60 + ed.getMinutes();
+    const cs = Math.max(sm, ws);
+    const ce = Math.min(em, we);
+    if (ce > cs) {
+      intervals.push({ startM: cs, endM: ce, type: "task", task: entry.task });
     }
   });
 
-  // fill any remaining time with unallocated
-  if (currentMins < endMins) {
-    blocks.push({ start: currentMins, end: endMins, task: null });
+  // sort all intervals by start
+  intervals.sort((a,b) => a.startM - b.startM);
+
+  // merge overlapping task intervals (lunch is not merged with tasks)
+  // build final blocks by walking the timeline
+  const blocks = [];
+  let cursor = ws;
+
+  for (const iv of intervals) {
+    if (iv.startM >= we) break;
+    const blockStart = Math.max(iv.startM, ws);
+    const blockEnd   = Math.min(iv.endM, we);
+    if (blockEnd <= blockStart) continue;
+
+    if (blockStart > cursor) {
+      // gap before this interval
+      blocks.push({ startM: cursor, endM: blockStart, type: "unallocated" });
+    }
+    if (blockStart >= cursor) {
+      blocks.push({ startM: blockStart, endM: blockEnd, type: iv.type, task: iv.task });
+      cursor = Math.max(cursor, blockEnd);
+    }
+  }
+  if (cursor < we) {
+    blocks.push({ startM: cursor, endM: we, type: "unallocated" });
   }
 
-  // render bar
+  // render
   timelineBar.innerHTML = "";
   const legend = new Map();
+  let hasUnallocated = false;
 
   blocks.forEach(block => {
-    const blockWidth = ((block.end - block.start) / totalMins) * 100;
-    const segment = document.createElement("div");
-    segment.className = "timeline-segment";
-    segment.style.width = blockWidth + "%";
+    const pct = ((block.endM - block.startM) / totalSpan) * 100;
+    const seg = document.createElement("div");
+    seg.className = "timeline-segment";
+    seg.style.width = pct + "%";
 
-    if (block.task) {
+    if (block.type === "lunch") {
+      seg.classList.add("timeline-lunch");
+      seg.textContent = "Lunch";
+      seg.title = `Lunch ${pad(Math.floor(ls/60))}:${pad(ls%60)}–${pad(Math.floor(le/60))}:${pad(le%60)}`;
+    } else if (block.type === "task") {
       const colour = getTaskColour(block.task);
-      segment.style.background = colour;
-      segment.textContent = block.task;
-      segment.title = block.task;
+      seg.style.background = colour;
+      seg.textContent = block.task;
+      seg.title = block.task;
       if (!legend.has(block.task)) legend.set(block.task, colour);
     } else {
-      segment.classList.add("timeline-unallocated");
-      segment.textContent = "Unallocated";
+      seg.classList.add("timeline-unallocated");
+      seg.textContent = "Unallocated";
+      hasUnallocated = true;
     }
-
-    timelineBar.appendChild(segment);
+    timelineBar.appendChild(seg);
   });
 
-  // render legend
+  // legend
   timelineLegend.innerHTML = "";
   legend.forEach((colour, task) => {
     const item = document.createElement("div");
     item.className = "legend-item";
-    const swatch = document.createElement("div");
-    swatch.className = "legend-swatch";
-    swatch.style.background = colour;
-    const label = document.createElement("span");
-    label.textContent = task;
-    item.appendChild(swatch);
-    item.appendChild(label);
+    const sw = document.createElement("div");
+    sw.className = "legend-swatch";
+    sw.style.background = colour;
+    const lbl = document.createElement("span");
+    lbl.textContent = task;
+    item.appendChild(sw); item.appendChild(lbl);
     timelineLegend.appendChild(item);
   });
 
-  // add unallocated to legend if present
-  if (blocks.some(b => !b.task)) {
+  // lunch in legend
+  if (ls !== null && le !== null && le > ls) {
     const item = document.createElement("div");
     item.className = "legend-item";
-    const swatch = document.createElement("div");
-    swatch.className = "legend-swatch";
-    swatch.style.background = "var(--unallocated)";
-    const label = document.createElement("span");
-    label.textContent = "Unallocated";
-    item.appendChild(swatch);
-    item.appendChild(label);
+    const sw = document.createElement("div");
+    sw.className = "legend-swatch";
+    sw.style.background = "var(--lunch-color)";
+    const lbl = document.createElement("span");
+    lbl.textContent = "Lunch";
+    item.appendChild(sw); item.appendChild(lbl);
+    timelineLegend.appendChild(item);
+  }
+
+  if (hasUnallocated) {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const sw = document.createElement("div");
+    sw.className = "legend-swatch";
+    sw.style.background = "var(--unallocated)";
+    const lbl = document.createElement("span");
+    lbl.textContent = "Unallocated";
+    item.appendChild(sw); item.appendChild(lbl);
     timelineLegend.appendChild(item);
   }
 }
 
-// ---- render table + totals + summary ----
+// ---- render ----
 function render() {
-  // timer buttons / display
   if (runningEntry) {
     startBtn.disabled = true;
     stopBtn.disabled = false;
@@ -747,14 +794,12 @@ function render() {
       byTask[e.task] = (byTask[e.task] || 0) + mins;
     }
 
-    // Start (editable)
     const tdStart = document.createElement("td");
     const startIn = document.createElement("input");
     startIn.type = "time"; startIn.value = fmtHM(startD);
     startIn.addEventListener("change", () => editTime(e, "start", startIn.value));
     tdStart.appendChild(startIn);
 
-    // End (editable, blank if running)
     const tdEnd = document.createElement("td");
     if (endD) {
       const endIn = document.createElement("input");
@@ -765,26 +810,22 @@ function render() {
       tdEnd.innerHTML = '<span class="running-tag">running</span>';
     }
 
-    // Duration
     const tdDur = document.createElement("td");
     tdDur.className = "dur";
     tdDur.textContent = fmtDuration(mins);
 
-    // Task (editable)
     const tdTask = document.createElement("td");
     const taskIn = document.createElement("input");
     taskIn.type = "text"; taskIn.value = e.task;
     taskIn.addEventListener("change", () => editField(e, "task", taskIn.value.trim()));
     tdTask.appendChild(taskIn);
 
-    // Note (editable)
     const tdNote = document.createElement("td");
     const noteIn = document.createElement("input");
     noteIn.type = "text"; noteIn.value = e.note || "";
     noteIn.addEventListener("change", () => editField(e, "note", noteIn.value.trim()));
     tdNote.appendChild(noteIn);
 
-    // Delete
     const tdDel = document.createElement("td");
     const delBtn = document.createElement("button");
     delBtn.className = "row-del"; delBtn.textContent = "✕"; delBtn.title = "Delete";
@@ -797,24 +838,25 @@ function render() {
 
   dailyTotalEl.textContent = fmtDuration(totalMins);
 
-  // work schedule display
-  const targetMins = computeScheduleHours();
-  const unloggedMins = Math.max(0, targetMins - totalMins);
-  targetHoursEl.textContent = fmtDuration(targetMins);
-  loggedHoursEl.textContent = fmtDuration(totalMins);
+  // schedule info
+  const info = computeScheduleInfo();
+  const unloggedMins = Math.max(0, info.targetMins - totalMins);
+  targetHoursEl.textContent = fmtDuration(info.targetMins);
+  loggedHoursEl.textContent  = fmtDuration(totalMins);
   unloggedHoursEl.textContent = fmtDuration(unloggedMins);
-  if (unloggedMins > 0) {
+  lunchDurationEl.textContent = info.lunchMins > 0 ? fmtDuration(info.lunchMins) : "—";
+
+  if (unloggedMins > 0 && info.valid) {
     unloggedHoursEl.parentElement.classList.add("gap-warning");
   } else {
     unloggedHoursEl.parentElement.classList.remove("gap-warning");
   }
 
-  // timeline
   renderTimeline();
 
   // summary
   summaryEl.innerHTML = "";
-  const tasks = Object.keys(byTask).sort((a, b) => byTask[b] - byTask[a]);
+  const tasks = Object.keys(byTask).sort((a,b) => byTask[b] - byTask[a]);
   if (!tasks.length) {
     summaryEl.innerHTML = '<div style="color:var(--muted)">No completed entries for this day.</div>';
   } else {
@@ -830,7 +872,7 @@ function render() {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
-    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
 // ---- inline edits ----
@@ -840,9 +882,8 @@ async function editTime(entry, field, value) {
   const base = entry[field] ? entry[field].toDate() : new Date();
   base.setHours(h, m, 0, 0);
   const update = { [field]: Timestamp.fromDate(base) };
-  // recompute duration if both ends present
-  const s = field === "start" ? base : entry.start.toDate();
-  const en = field === "end" ? base : (entry.end ? entry.end.toDate() : null);
+  const s  = field === "start" ? base : entry.start.toDate();
+  const en = field === "end"   ? base : (entry.end ? entry.end.toDate() : null);
   if (en) update.durationMins = Math.max(0, (en - s) / 60000);
   try { await updateDoc(doc(db, "timeEntries", entry.id), update); }
   catch (e) { setStatus("Error: " + e.message); }
@@ -860,6 +901,7 @@ async function removeEntry(entry) {
 }
 
 // ---- initial load ----
+loadScheduleForDate();
 loadEntriesForDate();
 </script>
 </body>
