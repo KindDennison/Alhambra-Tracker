@@ -16,6 +16,7 @@
     --text: #e6edf3;
     --muted: #8a97a5;
     --border: #2c3845;
+    --unallocated: #3a424d;
   }
   * { box-sizing: border-box; }
   body {
@@ -89,6 +90,65 @@
 
   .start-time-row { display: flex; gap: 10px; align-items: flex-end; }
   .start-time-row > div { flex: 1; }
+
+  /* ---- TIMELINE STYLES ---- */
+  .timeline-wrapper {
+    margin-top: 16px;
+  }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .timeline-bar {
+    display: flex;
+    height: 32px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .timeline-segment {
+    flex-shrink: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0 4px;
+    border-right: 1px solid rgba(0,0,0,0.2);
+    transition: opacity 0.2s;
+  }
+  .timeline-segment:hover { opacity: 0.8; }
+  .timeline-segment:last-child { border-right: none; }
+  .timeline-unallocated {
+    background: var(--unallocated);
+    color: var(--muted);
+  }
+  .timeline-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 0.8rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -172,6 +232,20 @@
       <div class="sched-line"><span>Target Hours:</span><span id="targetHours" class="dur">0h 00m</span></div>
       <div class="sched-line"><span>Logged Hours:</span><span id="loggedHours" class="dur">0h 00m</span></div>
       <div class="sched-line highlight"><span>Unlogged Hours:</span><span id="unloggedHours" class="dur">0h 00m</span></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="panel" id="timelinePanel" style="display:none;">
+    <h2>Day Timeline</h2>
+    <div class="timeline-wrapper">
+      <div class="timeline-labels">
+        <span id="timelineStart">09:00</span>
+        <span id="timelineMid">13:00</span>
+        <span id="timelineEnd">17:00</span>
+      </div>
+      <div class="timeline-bar" id="timelineBar"></div>
+      <div class="timeline-legend" id="timelineLegend"></div>
     </div>
   </div>
 
@@ -269,6 +343,8 @@ const taskList = $("taskList");
 const timerPanel = $("timerPanel"), logTitle = $("logTitle");
 const workStart = $("workStart"), workEnd = $("workEnd"), lunchMins = $("lunchMins");
 const targetHoursEl = $("targetHours"), loggedHoursEl = $("loggedHours"), unloggedHoursEl = $("unloggedHours");
+const timelinePanel = $("timelinePanel"), timelineBar = $("timelineBar"), timelineLegend = $("timelineLegend");
+const timelineStart = $("timelineStart"), timelineMid = $("timelineMid"), timelineEnd = $("timelineEnd");
 
 let selectedDate = new Date();  // the date being viewed
 let entries = [];              // entries for the selected date
@@ -314,6 +390,22 @@ function endOfDate(d) {
 
 function dateStringsMatch(d1, d2) {
   return dateInputValue(d1) === dateInputValue(d2);
+}
+
+// ---- colour scheme for tasks (cycle through palette) ----
+const taskColours = [
+  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
+  "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B88B", "#52B788"
+];
+const taskColourMap = {};
+let colourIndex = 0;
+
+function getTaskColour(task) {
+  if (!taskColourMap[task]) {
+    taskColourMap[task] = taskColours[colourIndex % taskColours.length];
+    colourIndex++;
+  }
+  return taskColourMap[task];
 }
 
 // ---- live clock ----
@@ -494,6 +586,132 @@ function computeScheduleHours() {
   return Math.max(0, endMins - startMins - l);
 }
 
+// ---- time to minutes since midnight ----
+function timeToMins(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// ---- build timeline ----
+function renderTimeline() {
+  const s = workStart.value, e = workEnd.value, l = parseInt(lunchMins.value) || 0;
+  if (!s || !e) {
+    timelinePanel.style.display = "none";
+    return;
+  }
+
+  timelinePanel.style.display = "block";
+
+  // parse schedule
+  const startMins = timeToMins(s);
+  const endMins = timeToMins(e);
+  const totalMins = endMins - startMins - l;
+
+  if (totalMins <= 0) {
+    timelinePanel.style.display = "none";
+    return;
+  }
+
+  // update labels
+  timelineStart.textContent = s;
+  timelineEnd.textContent = e;
+  const midMins = Math.floor((startMins + endMins) / 2);
+  timelineMid.textContent = `${pad(Math.floor(midMins / 60))}:${pad(midMins % 60)}`;
+
+  // build timeline segments from work day
+  // strategy: create a list of [start, end, task] blocks covering the work day
+  const blocks = [];
+  let currentMins = startMins;
+
+  // sort entries by start time
+  const sortedEntries = [...entries]
+    .filter(e => e.end) // only completed entries
+    .sort((a, b) => a.start.toDate() - b.start.toDate());
+
+  // find entries that overlap with work day
+  sortedEntries.forEach(entry => {
+    const entryStart = entry.start.toDate();
+    const entryEnd = entry.end.toDate();
+    const entryStartMins = entryStart.getHours() * 60 + entryStart.getMinutes();
+    const entryEndMins = entryEnd.getHours() * 60 + entryEnd.getMinutes();
+
+    // only consider entries within work day
+    if (entryEndMins <= startMins || entryStartMins >= endMins) return;
+
+    // clamp to work day
+    const clampStart = Math.max(entryStartMins, startMins);
+    const clampEnd = Math.min(entryEndMins, endMins);
+
+    if (clampStart < clampEnd) {
+      // if there's a gap before this entry, add unallocated block
+      if (clampStart > currentMins) {
+        blocks.push({ start: currentMins, end: clampStart, task: null });
+      }
+      blocks.push({ start: clampStart, end: clampEnd, task: entry.task });
+      currentMins = clampEnd;
+    }
+  });
+
+  // fill any remaining time with unallocated
+  if (currentMins < endMins) {
+    blocks.push({ start: currentMins, end: endMins, task: null });
+  }
+
+  // render bar
+  timelineBar.innerHTML = "";
+  const legend = new Map();
+
+  blocks.forEach(block => {
+    const blockWidth = ((block.end - block.start) / totalMins) * 100;
+    const segment = document.createElement("div");
+    segment.className = "timeline-segment";
+    segment.style.width = blockWidth + "%";
+
+    if (block.task) {
+      const colour = getTaskColour(block.task);
+      segment.style.background = colour;
+      segment.textContent = block.task;
+      segment.title = block.task;
+      if (!legend.has(block.task)) legend.set(block.task, colour);
+    } else {
+      segment.classList.add("timeline-unallocated");
+      segment.textContent = "Unallocated";
+    }
+
+    timelineBar.appendChild(segment);
+  });
+
+  // render legend
+  timelineLegend.innerHTML = "";
+  legend.forEach((colour, task) => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const swatch = document.createElement("div");
+    swatch.className = "legend-swatch";
+    swatch.style.background = colour;
+    const label = document.createElement("span");
+    label.textContent = task;
+    item.appendChild(swatch);
+    item.appendChild(label);
+    timelineLegend.appendChild(item);
+  });
+
+  // add unallocated to legend if present
+  if (blocks.some(b => !b.task)) {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const swatch = document.createElement("div");
+    swatch.className = "legend-swatch";
+    swatch.style.background = "var(--unallocated)";
+    const label = document.createElement("span");
+    label.textContent = "Unallocated";
+    item.appendChild(swatch);
+    item.appendChild(label);
+    timelineLegend.appendChild(item);
+  }
+}
+
 // ---- render table + totals + summary ----
 function render() {
   // timer buttons / display
@@ -591,6 +809,9 @@ function render() {
     unloggedHoursEl.parentElement.classList.remove("gap-warning");
   }
 
+  // timeline
+  renderTimeline();
+
   // summary
   summaryEl.innerHTML = "";
   const tasks = Object.keys(byTask).sort((a, b) => byTask[b] - byTask[a]);
@@ -600,7 +821,8 @@ function render() {
     tasks.forEach(t => {
       const row = document.createElement("div");
       row.className = "summary-row";
-      row.innerHTML = `<span class="task-name">${escapeHtml(t)}</span><span class="dur">${fmtDuration(byTask[t])}</span>`;
+      const colour = getTaskColour(t);
+      row.innerHTML = `<span class="task-name"><span style="display:inline-block;width:8px;height:8px;background:${colour};border-radius:2px;margin-right:6px;vertical-align:middle;"></span>${escapeHtml(t)}</span><span class="dur">${fmtDuration(byTask[t])}</span>`;
       summaryEl.appendChild(row);
     });
   }
