@@ -375,6 +375,7 @@ let runningEntry = null;
 let tickHandle = null;
 let unsubscribe = null;
 let schedSaveTimeout = null;
+let isLoadingSchedule = false;
 
 // ---- helpers ----
 const pad = n => String(n).padStart(2, "0");
@@ -468,11 +469,7 @@ function scheduleDocId() {
 }
 
 async function loadScheduleForDate() {
-  // Reset fields while loading
-  workStart.value = "";
-  workEnd.value = "";
-  lunchStart.value = "";
-  lunchEnd.value = "";
+  isLoadingSchedule = true;
   schedSavingIndicator.textContent = "Loading schedule…";
 
   try {
@@ -483,15 +480,25 @@ async function loadScheduleForDate() {
       workEnd.value    = d.workEnd    || "";
       lunchStart.value = d.lunchStart || "";
       lunchEnd.value   = d.lunchEnd   || "";
+    } else {
+      // No schedule found for this date
+      workStart.value = "";
+      workEnd.value = "";
+      lunchStart.value = "";
+      lunchEnd.value = "";
     }
     schedSavingIndicator.textContent = "";
+    isLoadingSchedule = false;
+    render();
   } catch (e) {
+    console.error("Error loading schedule:", e);
     schedSavingIndicator.textContent = "Error loading schedule";
+    isLoadingSchedule = false;
   }
-  render();
 }
 
 function scheduleChanged() {
+  if (isLoadingSchedule) return; // Don't save while loading
   clearTimeout(schedSaveTimeout);
   schedSavingIndicator.textContent = "Saving…";
   schedSaveTimeout = setTimeout(saveSchedule, 900);
@@ -506,11 +513,17 @@ async function saveSchedule() {
       workEnd:    workEnd.value    || null,
       lunchStart: lunchStart.value || null,
       lunchEnd:   lunchEnd.value   || null,
-    });
-    schedSavingIndicator.textContent = "Schedule saved";
-    setTimeout(() => { schedSavingIndicator.textContent = ""; }, 2000);
+      lastModified: new Date()
+    }, { merge: true });
+    schedSavingIndicator.textContent = "✓ Saved";
+    setTimeout(() => { 
+      if (schedSavingIndicator.textContent === "✓ Saved") {
+        schedSavingIndicator.textContent = ""; 
+      }
+    }, 2000);
   } catch (e) {
-    schedSavingIndicator.textContent = "Error saving schedule: " + e.message;
+    console.error("Error saving schedule:", e);
+    schedSavingIndicator.textContent = "Error saving: " + e.message;
   }
   render();
 }
