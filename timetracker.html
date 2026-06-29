@@ -1298,10 +1298,14 @@ let pipWin = null;
     const el = document.getElementById("elapsed");
     const idle = el ? el.classList.contains("idle") : true;
     const task = document.getElementById("taskInput")?.value?.trim() || "";
-    const pipEl  = pipWin.document.getElementById("pt");
+    const pipEl   = pipWin.document.getElementById("pt");
     const pipTask = pipWin.document.getElementById("ptask");
-    if (pipEl)  { pipEl.textContent = el ? el.textContent : "00:00:00"; pipEl.className = idle ? "idle" : "active"; }
-    if (pipTask) pipTask.textContent = task;
+    const pipStart = pipWin.document.getElementById("pip-start");
+    const pipStop  = pipWin.document.getElementById("pip-stop");
+    if (pipEl)   { pipEl.textContent = el ? el.textContent : "00:00:00"; pipEl.className = idle ? "idle" : "active"; }
+    if (pipTask)  pipTask.textContent = task;
+    if (pipStart) pipStart.disabled = !idle;
+    if (pipStop)  pipStop.disabled  = idle;
   });
   const el = document.getElementById("elapsed");
   if (el) obs.observe(el, { childList: true, characterData: true, subtree: true });
@@ -1329,7 +1333,7 @@ async function openPopout() {
   try {
     pipWin = await window.documentPictureInPicture.requestWindow({
       width: 260,
-      height: 150,
+      height: 190,
       disallowReturnToOpener: false,
     });
   } catch (e) {
@@ -1372,6 +1376,25 @@ async function openPopout() {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    #pip-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .pip-btn {
+      border: none;
+      border-radius: 5px;
+      padding: 5px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+    }
+    .pip-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    #pip-start { background: #4caf85; }
+    #pip-start:hover:not(:disabled) { background: #3d9b71; }
+    #pip-stop  { background: #c0564b; }
+    #pip-stop:hover:not(:disabled)  { background: #a8443a; }
   `;
   pipWin.document.head.appendChild(style);
 
@@ -1384,8 +1407,33 @@ async function openPopout() {
   taskEl.id = "ptask";
   taskEl.textContent = task;
 
+  const btnRow = pipWin.document.createElement("div");
+  btnRow.id = "pip-btns";
+
+  const startBtn = pipWin.document.createElement("button");
+  startBtn.id = "pip-start";
+  startBtn.className = "pip-btn";
+  startBtn.textContent = "Start";
+  startBtn.disabled = !idle; // disabled if timer already running
+  startBtn.addEventListener("click", () => {
+    document.getElementById("startBtn")?.click();
+  });
+
+  const stopBtn = pipWin.document.createElement("button");
+  stopBtn.id = "pip-stop";
+  stopBtn.className = "pip-btn";
+  stopBtn.textContent = "Stop";
+  stopBtn.disabled = idle; // disabled if timer not running
+  stopBtn.addEventListener("click", () => {
+    document.getElementById("stopBtn")?.click();
+  });
+
+  btnRow.appendChild(startBtn);
+  btnRow.appendChild(stopBtn);
+
   pipWin.document.body.appendChild(timerEl);
   pipWin.document.body.appendChild(taskEl);
+  pipWin.document.body.appendChild(btnRow);
 
   document.getElementById("popoutBtn").title = "Close PiP timer";
 
