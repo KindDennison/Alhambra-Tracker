@@ -1333,7 +1333,7 @@ async function openPopout() {
   try {
     pipWin = await window.documentPictureInPicture.requestWindow({
       width: 260,
-      height: 190,
+      height: 220,
       disallowReturnToOpener: false,
     });
   } catch (e) {
@@ -1395,6 +1395,20 @@ async function openPopout() {
     #pip-start:hover:not(:disabled) { background: #3d9b71; }
     #pip-stop  { background: #c0564b; }
     #pip-stop:hover:not(:disabled)  { background: #a8443a; }
+    #pip-focus-row {
+      margin-top: 6px;
+    }
+    #pip-focus {
+      background: none;
+      border: 1px solid #2c3845;
+      color: #8a97a5;
+      border-radius: 5px;
+      padding: 5px 14px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #pip-focus:hover { color: #4caf85; border-color: #4caf85; }
   `;
   pipWin.document.head.appendChild(style);
 
@@ -1431,9 +1445,26 @@ async function openPopout() {
   btnRow.appendChild(startBtn);
   btnRow.appendChild(stopBtn);
 
+  // Row with a button to jump back to the main tracker tab.
+  // This click handler runs in the main page's script context (this <script>),
+  // so window.focus() here focuses the tab that owns this PiP window.
+  const focusRow = pipWin.document.createElement("div");
+  focusRow.id = "pip-focus-row";
+
+  const focusBtn = pipWin.document.createElement("button");
+  focusBtn.id = "pip-focus";
+  focusBtn.textContent = "⤴ Back to Tracker";
+  focusBtn.title = "Switch to the main tracker tab";
+  focusBtn.addEventListener("click", () => {
+    window.focus();
+  });
+
+  focusRow.appendChild(focusBtn);
+
   pipWin.document.body.appendChild(timerEl);
   pipWin.document.body.appendChild(taskEl);
   pipWin.document.body.appendChild(btnRow);
+  pipWin.document.body.appendChild(focusRow);
 
   document.getElementById("popoutBtn").title = "Close PiP timer";
 
