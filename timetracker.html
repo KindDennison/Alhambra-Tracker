@@ -168,6 +168,18 @@
     display: inline-block; font-size: 0.7rem; background: var(--accent);
     color: #fff; padding: 2px 7px; border-radius: 10px; margin-left: 6px;
   }
+  .running-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .row-stop-btn {
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .row-stop-btn:hover { background: #a8443a; }
 
   h2 { font-size: 1.05rem; margin: 0 0 14px; }
   .totals { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -216,6 +228,32 @@
     min-height: 16px;
     transition: opacity 0.3s;
   }
+
+  /* ---- STALE RUNNING TIMER WARNING ---- */
+  #staleRunningBanner { border-color: var(--warning); }
+  .stale-warning {
+    background: rgba(232, 162, 63, 0.08);
+    border: 1px solid var(--warning);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .stale-warning:last-child { margin-bottom: 0; }
+  .stale-text { font-size: 0.92rem; color: var(--text); margin-bottom: 10px; }
+  .stale-text strong { color: var(--warning); }
+  .stale-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-stop-inline, .btn-stop-inline-secondary {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-stop-inline { background: var(--danger); color: #fff; }
+  .btn-stop-inline:hover { background: #a8443a; }
+  .btn-stop-inline-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .btn-stop-inline-secondary:hover { border-color: var(--warning); color: var(--warning); }
 
   /* ---- ANALYTICS STYLES ---- */
   .analytics-controls {
@@ -312,6 +350,9 @@
     <div id="clock">--:--:--</div>
     <div id="date">Loading…</div>
   </header>
+
+  <!-- STALE RUNNING TIMER WARNING (hidden unless a timer from a previous day is still open) -->
+  <div class="panel" id="staleRunningBanner" style="display:none;"></div>
 
   <!-- DATE PICKER -->
   <div class="panel">
@@ -411,7 +452,7 @@
       <thead>
         <tr>
           <th style="width:80px">Start</th>
-          <th style="width:80px">End</th>
+          <th style="width:120px">End</th>
           <th style="width:90px">Duration</th>
           <th>Task</th>
           <th>Note</th>
@@ -504,10 +545,11 @@ const analyticsSummary = $("analyticsSummary");
 const customDateRange = $("customDateRange");
 const analyticsFromDate = $("analyticsFromDate");
 const analyticsToDate = $("analyticsToDate");
+const staleRunningBanner = $("staleRunningBanner");
 
 let selectedDate = new Date();
 let entries = [];
-let allEntries = []; // for analytics
+let allEntries = []; // for analytics + stale-timer detection
 let allTaskNames = new Set();
 let runningEntry = null;
 let tickHandle = null;
@@ -750,7 +792,10 @@ function startTicking() {
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
     
-    // Hard stop at 23:59:00
+    // Best-effort same-day auto-stop at 23:59:00. NOTE: this only fires while
+    // this tab is open, active and not throttled/asleep — it is NOT a guarantee.
+    // The stale-timer banner + inline row Stop button are the real safety net
+    // for entries that get left running overnight.
     if (hours === 23 && minutes === 59 && seconds === 0) {
       console.log("Auto-stopping timer at 23:59");
       const end = new Date(now);
@@ -778,6 +823,27 @@ function startTicking() {
 function stopTicking() {
   if (tickHandle) clearInterval(tickHandle);
   tickHandle = null;
+}
+
+// ---- generic stop helper (used by main Stop button, row Stop button, and
+// the stale-timer banner) ----
+async function stopEntry(entry, endDate) {
+  const mins = (endDate - entry.start.toDate()) / 60000;
+  try {
+    await updateDoc(doc(db, "timeEntries", entry.id), {
+      end: Timestamp.fromDate(endDate),
+      durationMins: Math.max(0, mins)
+    });
+    if (dateStringsMatch(selectedDate, new Date()) && entry.id === runningEntry?.id) {
+      if (taskInput) taskInput.value = "";
+      if (noteInput) noteInput.value = "";
+      primeStartTime();
+    }
+    setStatus("");
+  } catch (e) {
+    setStatus("Error stopping entry: " + e.message);
+    alert("Error stopping entry: " + e.message);
+  }
 }
 
 // ---- START ----
@@ -811,21 +877,8 @@ if (startBtn) {
 if (stopBtn) {
   stopBtn.addEventListener("click", async () => {
     if (!runningEntry) return;
-    const end = new Date();
-    const mins = (end - runningEntry.start.toDate()) / 60000;
     setStatus("Stopping…");
-    try {
-      await updateDoc(doc(db, "timeEntries", runningEntry.id), {
-        end: Timestamp.fromDate(end),
-        durationMins: Math.max(0, mins)
-      });
-      if (taskInput) taskInput.value = "";
-      if (noteInput) noteInput.value = "";
-      primeStartTime();
-      setStatus("");
-    } catch (e) {
-      setStatus("Error: " + e.message);
-    }
+    await stopEntry(runningEntry, new Date());
   });
 }
 
@@ -851,7 +904,7 @@ function loadEntriesForDate() {
   }, err => setStatus("Listener error: " + err.message));
 }
 
-// ---- load ALL entries for analytics ----
+// ---- load ALL entries for analytics + stale-timer detection ----
 function loadAllEntries() {
   if (unsubscribeAnalytics) unsubscribeAnalytics();
   const q = query(
@@ -863,7 +916,60 @@ function loadAllEntries() {
     allEntries = [];
     snap.forEach(d => allEntries.push({ id: d.id, ...d.data() }));
     renderAnalytics();
+    renderStaleRunningBanner();
   }, err => console.error("Analytics listener error:", err));
+}
+
+// ---- stale running-timer detection ----
+// Finds any entry with no end time whose start date isn't today, regardless
+// of which date is currently being viewed, and lets you fix it in one click.
+function renderStaleRunningBanner() {
+  if (!staleRunningBanner) return;
+  const today = new Date();
+  const stale = allEntries.filter(e => e.end == null && !dateStringsMatch(e.start.toDate(), today));
+
+  if (stale.length === 0) {
+    staleRunningBanner.style.display = "none";
+    staleRunningBanner.innerHTML = "";
+    return;
+  }
+
+  staleRunningBanner.style.display = "block";
+  staleRunningBanner.innerHTML = "";
+
+  stale.forEach(e => {
+    const startD = e.start.toDate();
+
+    const card = document.createElement("div");
+    card.className = "stale-warning";
+
+    const text = document.createElement("div");
+    text.className = "stale-text";
+    text.innerHTML = `⚠ "<strong>${escapeHtml(e.task)}</strong>" has been running since ${escapeHtml(fmtDate(startD))} ${escapeHtml(fmtHM(startD))} and was never stopped.`;
+
+    const btnRow = document.createElement("div");
+    btnRow.className = "stale-btns";
+
+    const stopNowBtn = document.createElement("button");
+    stopNowBtn.className = "btn-stop-inline";
+    stopNowBtn.textContent = "Stop Now";
+    stopNowBtn.addEventListener("click", () => stopEntry(e, new Date()));
+
+    const stopEODBtn = document.createElement("button");
+    stopEODBtn.className = "btn-stop-inline-secondary";
+    stopEODBtn.textContent = `Stop at 23:59 on ${dateInputValue(startD)}`;
+    stopEODBtn.addEventListener("click", () => {
+      const eod = new Date(startD);
+      eod.setHours(23, 59, 0, 0);
+      stopEntry(e, eod);
+    });
+
+    btnRow.appendChild(stopNowBtn);
+    btnRow.appendChild(stopEODBtn);
+    card.appendChild(text);
+    card.appendChild(btnRow);
+    staleRunningBanner.appendChild(card);
+  });
 }
 
 // ---- task autocomplete ----
@@ -1222,7 +1328,24 @@ function render() {
       endIn.addEventListener("change", () => editTime(e, "end", endIn.value));
       tdEnd.appendChild(endIn);
     } else {
-      tdEnd.innerHTML = '<span class="running-tag">running</span>';
+      // Running entry: show the "running" tag plus an inline Stop button so
+      // it can be stopped immediately from here, on any date being viewed.
+      const cell = document.createElement("div");
+      cell.className = "running-cell";
+
+      const tag = document.createElement("span");
+      tag.className = "running-tag";
+      tag.textContent = "running";
+
+      const inlineStopBtn = document.createElement("button");
+      inlineStopBtn.className = "row-stop-btn";
+      inlineStopBtn.textContent = "Stop";
+      inlineStopBtn.title = "Stop this timer now";
+      inlineStopBtn.addEventListener("click", () => stopEntry(e, new Date()));
+
+      cell.appendChild(tag);
+      cell.appendChild(inlineStopBtn);
+      tdEnd.appendChild(cell);
     }
 
     const tdDur = document.createElement("td");
