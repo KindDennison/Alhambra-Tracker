@@ -1340,7 +1340,7 @@ function render() {
     if (!dateStringsMatch(startD, selectedDate)) startDateIn.classList.add("dt-date-changed");
 
     const commitStart = () => editEntryDateTime(e, "start", startDateIn.value, startTimeIn.value);
-    startTimeIn.addEventListener("change", commitStart);
+    startTimeIn.addEventListener("blur", commitStart);
     startDateIn.addEventListener("change", commitStart);
 
     startCell.appendChild(startTimeIn);
@@ -1364,7 +1364,7 @@ function render() {
       if (!dateStringsMatch(endD, startD)) endDateIn.classList.add("dt-date-changed");
 
       const commitEnd = () => editEntryDateTime(e, "end", endDateIn.value, endTimeIn.value);
-      endTimeIn.addEventListener("change", commitEnd);
+      endTimeIn.addEventListener("blur", commitEnd);
       endDateIn.addEventListener("change", commitEnd);
 
       endCell.appendChild(endTimeIn);
