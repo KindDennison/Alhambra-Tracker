@@ -169,6 +169,17 @@
     color: #fff; padding: 2px 7px; border-radius: 10px; margin-left: 6px;
   }
   .running-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dt-cell { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
+  .dt-cell input[type="time"] { padding: 5px 7px; }
+  .dt-date-input {
+    padding: 3px 6px !important;
+    font-size: 0.72rem !important;
+    color: var(--muted);
+    background: transparent !important;
+    border: 1px dashed var(--border) !important;
+  }
+  .dt-date-input:hover { border-color: var(--accent) !important; color: var(--text); }
+  .dt-date-changed { border-color: var(--warning) !important; color: var(--warning) !important; }
   .row-stop-btn {
     background: var(--danger);
     color: #fff;
@@ -451,8 +462,8 @@
     <table>
       <thead>
         <tr>
-          <th style="width:80px">Start</th>
-          <th style="width:120px">End</th>
+          <th style="width:115px">Start</th>
+          <th style="width:150px">End</th>
           <th style="width:90px">Duration</th>
           <th>Task</th>
           <th>Note</th>
@@ -1314,19 +1325,51 @@ function render() {
     }
 
     const tdStart = document.createElement("td");
-    const startIn = document.createElement("input");
-    startIn.type = "time";
-    startIn.value = fmtHM(startD);
-    startIn.addEventListener("change", () => editTime(e, "start", startIn.value));
-    tdStart.appendChild(startIn);
+    const startCell = document.createElement("div");
+    startCell.className = "dt-cell";
+
+    const startTimeIn = document.createElement("input");
+    startTimeIn.type = "time";
+    startTimeIn.value = fmtHM(startD);
+
+    const startDateIn = document.createElement("input");
+    startDateIn.type = "date";
+    startDateIn.className = "dt-date-input";
+    startDateIn.value = dateInputValue(startD);
+    startDateIn.title = "Start date — change this if the entry was logged on the wrong day";
+    if (!dateStringsMatch(startD, selectedDate)) startDateIn.classList.add("dt-date-changed");
+
+    const commitStart = () => editEntryDateTime(e, "start", startDateIn.value, startTimeIn.value);
+    startTimeIn.addEventListener("change", commitStart);
+    startDateIn.addEventListener("change", commitStart);
+
+    startCell.appendChild(startTimeIn);
+    startCell.appendChild(startDateIn);
+    tdStart.appendChild(startCell);
 
     const tdEnd = document.createElement("td");
     if (endD) {
-      const endIn = document.createElement("input");
-      endIn.type = "time";
-      endIn.value = fmtHM(endD);
-      endIn.addEventListener("change", () => editTime(e, "end", endIn.value));
-      tdEnd.appendChild(endIn);
+      const endCell = document.createElement("div");
+      endCell.className = "dt-cell";
+
+      const endTimeIn = document.createElement("input");
+      endTimeIn.type = "time";
+      endTimeIn.value = fmtHM(endD);
+
+      const endDateIn = document.createElement("input");
+      endDateIn.type = "date";
+      endDateIn.className = "dt-date-input";
+      endDateIn.value = dateInputValue(endD);
+      endDateIn.title = "End date — change this if the timer ran past midnight and got stamped on the wrong day";
+      if (!dateStringsMatch(endD, startD)) endDateIn.classList.add("dt-date-changed");
+
+      const commitEnd = () => editEntryDateTime(e, "end", endDateIn.value, endTimeIn.value);
+      endTimeIn.addEventListener("change", commitEnd);
+      endDateIn.addEventListener("change", commitEnd);
+
+      endCell.appendChild(endTimeIn);
+      endCell.appendChild(endDateIn);
+      tdEnd.appendChild(endCell);
     } else {
       // Running entry: show the "running" tag plus an inline Stop button so
       // it can be stopped immediately from here, on any date being viewed.
@@ -1413,15 +1456,28 @@ function render() {
 }
 
 // ---- inline edits ----
-async function editTime(entry, field, value) {
-  if (!value) return;
-  const [h, m] = value.split(":").map(Number);
-  const base = entry[field] ? entry[field].toDate() : new Date();
-  base.setHours(h, m, 0, 0);
-  const update = { [field]: Timestamp.fromDate(base) };
-  const s = field === "start" ? base : entry.start.toDate();
-  const en = field === "end" ? base : (entry.end ? entry.end.toDate() : null);
+// Date-aware editor for the Start/End table cells. Takes an explicit date
+// (yyyy-mm-dd) alongside the time (HH:MM) so entries that were stamped on
+// the wrong day (e.g. a timer left running past midnight) can be corrected
+// precisely, instead of silently keeping a stale date.
+async function editEntryDateTime(entry, field, dateValue, timeValue) {
+  if (!dateValue || !timeValue) return;
+  const [y, m, d] = dateValue.split("-").map(Number);
+  const [h, mi] = timeValue.split(":").map(Number);
+  const newDate = new Date(y, m - 1, d, h, mi, 0, 0);
+
+  const s = field === "start" ? newDate : entry.start.toDate();
+  const en = field === "end" ? newDate : (entry.end ? entry.end.toDate() : null);
+
+  if (en && en < s) {
+    alert("The end date/time can't be before the start date/time. Check the date fields.");
+    render();
+    return;
+  }
+
+  const update = { [field]: Timestamp.fromDate(newDate) };
   if (en) update.durationMins = Math.max(0, (en - s) / 60000);
+
   try {
     await updateDoc(doc(db, "timeEntries", entry.id), update);
   } catch (e) {
