@@ -196,9 +196,10 @@
   .totals { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
   .totals .big { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
 
-  .summary-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .summary-row { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
   .summary-row:last-child { border-bottom: none; }
   .summary-row .task-name { font-weight: 600; }
+  .task-notes { flex-basis: 100%; font-size: 0.8rem; color: var(--muted); margin: 3px 0 0 14px; }
 
   #status { text-align: center; color: var(--muted); font-size: 0.85rem; min-height: 18px; margin-top: 6px; }
   datalist { display: none; }
@@ -265,6 +266,24 @@
   .btn-stop-inline:hover { background: #a8443a; }
   .btn-stop-inline-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
   .btn-stop-inline-secondary:hover { border-color: var(--warning); color: var(--warning); }
+
+  /* ---- GAPS ---- */
+  .gap-row { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 0; border-bottom:1px solid var(--border); }
+  .gap-row:last-child { border-bottom:none; }
+  .gap-time { font-variant-numeric: tabular-nums; }
+  .gap-time span { color: var(--warning); margin-left: 8px; }
+  .gap-btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .gap-btn, .recent-btn { background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+  .gap-btn:hover, .recent-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- RECENT TASKS ---- */
+  .recent-tasks { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .recent-btn { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .recent-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* ---- SPLIT BUTTON ---- */
+  .row-split { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:0 6px; }
+  .row-split:hover { color: var(--accent); }
 
   /* ---- ANALYTICS STYLES ---- */
   .analytics-controls {
@@ -424,8 +443,15 @@
     </div>
   </div>
 
+  <!-- GAPS -->
+  <div class="panel" id="gapsPanel" style="display:none;">
+    <h2>Gaps</h2>
+    <div id="gapsList"></div>
+  </div>
+
   <!-- TIMER PANEL (only show if viewing today) -->
   <div class="panel" id="timerPanel" style="display:none;">
+    <div class="recent-tasks" id="recentTasks"></div>
     <div class="grid">
       <div class="full">
         <label for="taskInput">Task</label>
@@ -467,7 +493,7 @@
           <th style="width:90px">Duration</th>
           <th>Task</th>
           <th>Note</th>
-          <th style="width:30px"></th>
+          <th style="width:62px"></th>
         </tr>
       </thead>
       <tbody id="logBody"></tbody>
@@ -516,7 +542,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, writeBatch,
   query, where, orderBy, onSnapshot, Timestamp, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -557,6 +583,7 @@ const customDateRange = $("customDateRange");
 const analyticsFromDate = $("analyticsFromDate");
 const analyticsToDate = $("analyticsToDate");
 const staleRunningBanner = $("staleRunningBanner");
+const gapsPanel = $("gapsPanel"), gapsList = $("gapsList"), recentTasksEl = $("recentTasks");
 
 let selectedDate = new Date();
 let entries = [];
@@ -928,6 +955,7 @@ function loadAllEntries() {
     snap.forEach(d => allEntries.push({ id: d.id, ...d.data() }));
     renderAnalytics();
     renderStaleRunningBanner();
+    renderRecentTasks();
   }, err => console.error("Analytics listener error:", err));
 }
 
@@ -1312,6 +1340,7 @@ function render() {
   logBody.innerHTML = "";
   let totalMins = 0;
   const byTask = {};
+  const byNotes = {};
 
   entries.forEach(e => {
     const tr = document.createElement("tr");
@@ -1322,6 +1351,7 @@ function render() {
     if (e.end) {
       totalMins += mins;
       byTask[e.task] = (byTask[e.task] || 0) + mins;
+      if (e.note) (byNotes[e.task] ||= new Set()).add(e.note);
     }
 
     const tdStart = document.createElement("td");
@@ -1410,6 +1440,14 @@ function render() {
     tdNote.appendChild(noteIn);
 
     const tdDel = document.createElement("td");
+    if (e.end) {
+      const splitBtn = document.createElement("button");
+      splitBtn.className = "row-split";
+      splitBtn.textContent = "✂";
+      splitBtn.title = "Split this entry into two";
+      splitBtn.addEventListener("click", () => splitEntry(e));
+      tdDel.appendChild(splitBtn);
+    }
     const delBtn = document.createElement("button");
     delBtn.className = "row-del";
     delBtn.textContent = "✕";
@@ -1438,6 +1476,8 @@ function render() {
   }
 
   renderTimeline();
+  renderGaps();
+  renderRecentTasks();
 
   // summary
   summaryEl.innerHTML = "";
@@ -1449,10 +1489,154 @@ function render() {
       const row = document.createElement("div");
       row.className = "summary-row";
       const colour = getTaskColour(t);
-      row.innerHTML = `<span class="task-name"><span style="display:inline-block;width:8px;height:8px;background:${colour};border-radius:2px;margin-right:6px;vertical-align:middle;"></span>${escapeHtml(t)}</span><span class="dur">${fmtDuration(byTask[t])}</span>`;
+      const notes = byNotes[t] ? [...byNotes[t]].join("; ") : "";
+      row.innerHTML = `<span class="task-name"><span style="display:inline-block;width:8px;height:8px;background:${colour};border-radius:2px;margin-right:6px;vertical-align:middle;"></span>${escapeHtml(t)}</span><span class="dur">${fmtDuration(byTask[t])}</span>${notes ? `<div class="task-notes">${escapeHtml(notes)}</div>` : ""}`;
       summaryEl.appendChild(row);
     });
   }
+}
+
+// ---- gaps between entries (lunch is excluded) ----
+function computeGaps() {
+  const gaps = [];
+  const sorted = [...entries].sort((a, b) => a.start.toMillis() - b.start.toMillis());
+  const info = computeScheduleInfo();
+  let lunchS = null, lunchE = null;
+  if (info.ls != null && info.le != null && info.le > info.ls) {
+    lunchS = new Date(selectedDate); lunchS.setHours(0, info.ls, 0, 0);
+    lunchE = new Date(selectedDate); lunchE.setHours(0, info.le, 0, 0);
+  }
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i], b = sorted[i + 1];
+    if (!a.end) continue;
+    const gs = a.end.toDate(), ge = b.start.toDate();
+    if (ge - gs < 60000) continue;
+    let pieces = [[gs, ge]];
+    if (lunchS) {
+      pieces = [];
+      if (gs < lunchS) pieces.push([gs, new Date(Math.min(ge, lunchS))]);
+      if (ge > lunchE) pieces.push([new Date(Math.max(gs, lunchE)), ge]);
+    }
+    pieces.forEach(([s, e]) => {
+      if (e - s < 60000) return;
+      gaps.push({
+        start: s, end: e, prev: a, next: b,
+        canExtendPrev: s.getTime() === gs.getTime(),
+        canPullNext: e.getTime() === ge.getTime()
+      });
+    });
+  }
+  return gaps;
+}
+
+async function fillGap(g, mode) {
+  try {
+    if (mode === "extendPrev") {
+      await updateDoc(doc(db, "timeEntries", g.prev.id), {
+        end: Timestamp.fromDate(g.end),
+        durationMins: Math.max(0, (g.end - g.prev.start.toDate()) / 60000)
+      });
+    } else if (mode === "pullNext") {
+      const upd = { start: Timestamp.fromDate(g.start) };
+      if (g.next.end) upd.durationMins = Math.max(0, (g.next.end.toDate() - g.start) / 60000);
+      await updateDoc(doc(db, "timeEntries", g.next.id), upd);
+    } else {
+      await addDoc(entriesRef, {
+        uid: UID, task: "Misc", note: "",
+        start: Timestamp.fromDate(g.start), end: Timestamp.fromDate(g.end),
+        durationMins: (g.end - g.start) / 60000
+      });
+    }
+  } catch (e) { setStatus("Error: " + e.message); console.error(e); }
+}
+
+function renderGaps() {
+  if (!gapsPanel || !gapsList) return;
+  const gaps = computeGaps();
+  gapsPanel.style.display = gaps.length ? "block" : "none";
+  gapsList.innerHTML = "";
+  gaps.forEach(g => {
+    const row = document.createElement("div");
+    row.className = "gap-row";
+
+    const label = document.createElement("div");
+    label.className = "gap-time";
+    label.textContent = `${fmtHM(g.start)} – ${fmtHM(g.end)}`;
+    const dur = document.createElement("span");
+    dur.textContent = fmtDuration((g.end - g.start) / 60000);
+    label.appendChild(dur);
+
+    const btns = document.createElement("div");
+    btns.className = "gap-btns";
+    const mk = (text, title, mode) => {
+      const b = document.createElement("button");
+      b.className = "gap-btn";
+      b.textContent = text;
+      b.title = title;
+      b.addEventListener("click", () => fillGap(g, mode));
+      btns.appendChild(b);
+    };
+    if (g.canExtendPrev) mk("Extend previous", `Extend "${g.prev.task}" to ${fmtHM(g.end)}`, "extendPrev");
+    if (g.canPullNext)   mk("Pull next back", `Start "${g.next.task}" at ${fmtHM(g.start)}`, "pullNext");
+    mk("Log as Misc", "Add a Misc entry for this gap", "misc");
+
+    row.appendChild(label);
+    row.appendChild(btns);
+    gapsList.appendChild(row);
+  });
+}
+
+// ---- recent task quick-start ----
+function renderRecentTasks() {
+  if (!recentTasksEl) return;
+  const seen = new Set(), recent = [];
+  for (let i = allEntries.length - 1; i >= 0 && recent.length < 6; i--) {
+    const e = allEntries[i];
+    if (!e.task) continue;
+    const key = e.task + "|" + (e.note || "");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    recent.push({ task: e.task, note: e.note || "" });
+  }
+  recentTasksEl.innerHTML = "";
+  recent.forEach(r => {
+    const b = document.createElement("button");
+    b.className = "recent-btn";
+    b.textContent = r.note ? `${r.task} – ${r.note}` : r.task;
+    b.title = "Start this task";
+    b.disabled = !!runningEntry;
+    b.addEventListener("click", () => {
+      if (taskInput) taskInput.value = r.task;
+      if (noteInput) noteInput.value = r.note;
+      startBtn?.click();
+    });
+    recentTasksEl.appendChild(b);
+  });
+}
+
+// ---- split an entry in two ----
+async function splitEntry(entry) {
+  if (!entry.end) return;
+  const s = entry.start.toDate(), en = entry.end.toDate();
+  const mid = new Date((s.getTime() + en.getTime()) / 2);
+  const input = prompt(`Split "${entry.task}" (${fmtHM(s)}–${fmtHM(en)}) at what time? (HH:MM)`, fmtHM(mid));
+  if (!input) return;
+  const m = input.trim().match(/^(\d{1,2})[:.]?(\d{2})$/);
+  if (!m) { alert("Enter the time as HH:MM."); return; }
+  const at = new Date(s); at.setHours(+m[1], +m[2], 0, 0);
+  if (at <= s || at >= en) { alert(`The split time must be between ${fmtHM(s)} and ${fmtHM(en)}.`); return; }
+  try {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "timeEntries", entry.id), {
+      end: Timestamp.fromDate(at), durationMins: (at - s) / 60000
+    });
+    batch.set(doc(entriesRef), {
+      uid: UID, task: entry.task, note: entry.note || "",
+      start: Timestamp.fromDate(at), end: Timestamp.fromDate(en),
+      durationMins: (en - at) / 60000
+    });
+    await batch.commit();
+  } catch (e) { setStatus("Error: " + e.message); alert("Error splitting entry: " + e.message); }
 }
 
 // ---- inline edits ----
