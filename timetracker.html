@@ -1542,7 +1542,7 @@ async function fillGap(g, mode) {
       await updateDoc(doc(db, "timeEntries", g.next.id), upd);
     } else {
       await addDoc(entriesRef, {
-        uid: UID, task: "Misc", note: "",
+        uid: UID, task: "General", note: "",
         start: Timestamp.fromDate(g.start), end: Timestamp.fromDate(g.end),
         durationMins: (g.end - g.start) / 60000
       });
