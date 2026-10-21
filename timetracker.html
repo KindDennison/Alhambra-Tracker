@@ -1578,7 +1578,7 @@ function renderGaps() {
     };
     if (g.canExtendPrev) mk("Extend previous", `Extend "${g.prev.task}" to ${fmtHM(g.end)}`, "extendPrev");
     if (g.canPullNext)   mk("Pull next back", `Start "${g.next.task}" at ${fmtHM(g.start)}`, "pullNext");
-    mk("Log as Misc", "Add a Misc entry for this gap", "misc");
+    mk("Log as General", "Add a General entry for this gap", "General");
 
     row.appendChild(label);
     row.appendChild(btns);
