@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Holiday log · Holiday Tracker</title><link rel="stylesheet" href="shared.css"></head><body><main>
+<h1>Holiday log</h1>
+<div class="card row"><label>Employee<select id="emp"></select></label><label>Leave type<select id="typ"></select></label><label>Start date<input type="date" id="dt"></label><label>Days<input type="number" id="dy" value="1" min="0.5" step="0.5" style="width:80px"></label><label>Notes<input id="nt"></label><button id="add">Add entry</button></div>
+<div class="row"><label>Show<select id="fe"></select></label></div>
+<div class="wrap"><table id="t"></table></div></main>
+<script src="shared.js"></script><script>
+App.init('log',()=>{const s=App.s,o=a=>a.map(x=>`<option>${esc(x)}</option>`).join('');
+$('#emp').innerHTML=o(s.emps.map(e=>e.n));$('#typ').innerHTML=o(TYPES);$('#fe').innerHTML='<option value="">All employees</option>'+o(s.emps.map(e=>e.n));
+$('#add').onclick=()=>{const d=$('#dt').value,n=+$('#dy').value;if(!d||!(n>0))return alert('Enter a start date and the number of days.');s.log.push({e:$('#emp').value,d,t:$('#typ').value,days:n,note:$('#nt').value});App.save();$('#nt').value='';draw()};
+function draw(){const f=$('#fe').value;
+$('#t').innerHTML='<tr><th>Date<th>Employee<th>Type<th>Days<th>Notes<th></tr>'+s.log.map((l,i)=>({...l,i})).filter(l=>!f||l.e==f).sort((a,b)=>a.d<b.d?1:-1).map(l=>`<tr><td>${fmt(l.d)}<td>${esc(l.e)}<td>${esc(l.t)}<td>${l.days}<td>${esc(l.note)}<td><button class="g" data-del="${l.i}">Delete</button></tr>`).join('')}
+$('#fe').onchange=draw;
+$('#t').onclick=e=>{const i=e.target.dataset.del;if(i!=null&&confirm('Delete this entry?')){s.log.splice(i,1);App.save();draw()}};draw()});
+</script></body></html>
