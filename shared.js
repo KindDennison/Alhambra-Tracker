@@ -10,7 +10,7 @@ const fmt=s=>s?D(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year
 const App={s:null,
 init(page,cb){
  const nav=document.createElement('nav');
- nav.innerHTML='<b>Company Holiday Tracker</b>'+[['index','Dashboard'],['log','Holiday log'],['employees','Employees'],['rota','2027 rota']].map(([p,t])=>`<a href="${p}.html"${p==page?' class="on"':''}>${t}</a>`).join('');
+ nav.innerHTML='<b>Company Holiday Tracker</b>'+[['forconnor','Dashboard'],['log','Holiday log'],['employees','Employees'],['rota','2027 rota']].map(([p,t])=>`<a href="${p}.html"${p==page?' class="on"':''}>${t}</a>`).join('');
  document.body.prepend(nav);
  const go=s=>{App.s=s;cb()};
  if(!FB){let s;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}return go(s||structuredClone(SEED))}
