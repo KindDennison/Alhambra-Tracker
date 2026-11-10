@@ -1,0 +1,29 @@
+// Set FB to your Firebase config object to share data between everyone using the site.
+// While FB is null, data is saved in each visitor's own browser only.
+const FB=null;
+const KEY='holidayTracker.v1',TYPES=['Annual Leave','Sick Leave','Public Holiday','Unpaid','Other'];
+const SEED={"set":{"a12":28,"a5":28,"ys":"2027-01-01","ref":"2027-01-04","shS":"2027-12-27","shE":"2027-12-31"},"bh":[["2027-01-01","New Year's Day"],["2027-03-26","Good Friday"],["2027-03-29","Easter Monday"],["2027-05-03","Early May Bank Holiday"],["2027-05-31","Spring Bank Holiday"],["2027-08-30","Summer Bank Holiday"],["2027-12-27","Christmas Day (substitute)"],["2027-12-28","Boxing Day (substitute)"]],"emps":[{"n":"Alfie Cull","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Anthony Booth","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Chris Smith","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Connor Dennison","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Damian Slupski","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Daniel Watt","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Darren Wilkinson","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Dave Hepworth","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Dave Leigh","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Harvey Brambani","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Jack Craven","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Jack Turner","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Jacoline Khumalo","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Jason Reed","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Jordan Webster","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Kieron Gallagher","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Kyian Dyer","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Luke Barnes","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Madison Coyle","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Mark Conroy","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Michelle Feather","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Molly Robinson","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Nathan Shaw","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Nermin Mehic","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Rachael Goy","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Sarah Butterfield","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Steve Prater","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Tahir Ishaq","d":"Department","start":"2024-01-01","carry":0,"team":"5-Day Week"},{"n":"Toby Burgess","d":"Department","start":"2024-01-01","carry":0,"team":"Team 1"},{"n":"Tom Hobson","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Tom Sewell","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"},{"n":"Zak Hobson","d":"Department","start":"2024-01-01","carry":0,"team":"Team 2"}],"log":[]};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const D=s=>new Date(s+'T00:00:00Z'),iso=d=>d.toISOString().slice(0,10);
+const fmt=s=>s?D(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}):'';
+const App={s:null,
+init(page,cb){
+ const nav=document.createElement('nav');
+ nav.innerHTML='<b>Company Holiday Tracker</b>'+[['index','Dashboard'],['log','Holiday log'],['employees','Employees'],['rota','2027 rota']].map(([p,t])=>`<a href="${p}.html"${p==page?' class="on"':''}>${t}</a>`).join('');
+ document.body.prepend(nav);
+ const go=s=>{App.s=s;cb()};
+ if(!FB){let s;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}return go(s||structuredClone(SEED))}
+ const L=u=>new Promise(r=>{const e=document.createElement('script');e.src='https://www.gstatic.com/firebasejs/10.12.2/'+u;e.onload=r;document.head.append(e)});
+ L('firebase-app-compat.js').then(()=>L('firebase-firestore-compat.js')).then(()=>{firebase.initializeApp(FB);App.db=firebase.firestore().doc('holiday/data');return App.db.get()}).then(d=>go(d.exists?JSON.parse(d.data().json):structuredClone(SEED)));
+},
+save(){try{localStorage.setItem(KEY,JSON.stringify(App.s))}catch(e){}if(App.db)App.db.set({json:JSON.stringify(App.s)})},
+weekType(d){const w=d.getUTCDay()||7;return((Math.round((new Date(d-(w-1)*864e5)-D(App.s.set.ref))/6048e5)%2)+2)%2},
+offT(d){const w=d.getUTCDay()||7,k=App.weekType(d);return w==5?[k?'Team 2':'Team 1']:w==1?[k?'Team 1':'Team 2']:[]},
+acc(t){return App.s.bh.filter(([b])=>App.offT(D(b)).includes(t)).length},
+calc(e){const s=App.s,five=!/^Team [12]$/.test(e.team),base=(five?s.set.a5:s.set.a12)-s.bh.length,acc=five?0:App.acc(e.team);
+ const a=D(s.set.ys),b=D(e.start),y=a.getUTCFullYear()-b.getUTCFullYear()-(a.getUTCMonth()*100+a.getUTCDate()<b.getUTCMonth()*100+b.getUTCDate()?1:0);
+ const ls=y>=20?5:y>=15?3:y>=10?2:y>=5?1:0,L=s.log.filter(l=>l.e==e.n),sum=t=>L.filter(l=>l.t==t).reduce((a,l)=>a+ +l.days,0);
+ const used=sum('Annual Leave'),sick=sum('Sick Leave'),ep=L.filter(l=>l.t=='Sick Leave').length,total=base+(+e.carry||0)+acc+ls;
+ return{base,acc,ls,total,used,remaining:total-used,sick,bf:ep*ep*sick}},
+bf:b=>b>=900?'red':b>=100?'orange':b>=45?'amber':''};
