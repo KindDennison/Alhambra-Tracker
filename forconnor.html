@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard · Holiday Tracker</title><link rel="stylesheet" href="shared.css"></head><body><main>
+<h1>Dashboard</h1><div class="stats" id="st"></div>
+<h2>Leave starting in the next 30 days</h2><div class="wrap"><table id="up"></table></div>
+<h2>Everyone</h2><div class="row"><input id="q" placeholder="Search name or team" aria-label="Search"></div><div class="wrap"><table id="t"></table></div></main>
+<script src="shared.js"></script><script>
+App.init('index',()=>{const s=App.s,today=iso(new Date()),end=iso(new Date(Date.now()+30*864e5)),cs=s.emps.map(App.calc);
+$('#st').innerHTML=[['Employees',s.emps.length],['Annual leave used',cs.reduce((a,c)=>a+c.used,0)],['Annual leave remaining',cs.reduce((a,c)=>a+c.remaining,0)],['Off today',s.log.filter(l=>l.d<=today&&iso(new Date(D(l.d).getTime()+(Math.ceil(l.days)-1)*864e5))>=today).length]].map(([a,b])=>`<div class="card">${a}<b>${b}</b></div>`).join('');
+const up=s.log.filter(l=>l.d>=today&&l.d<=end).sort((a,b)=>a.d<b.d?-1:1);
+$('#up').innerHTML=up.length?'<tr><th>Date<th>Employee<th>Type<th>Days</tr>'+up.map(l=>`<tr><td>${fmt(l.d)}<td>${esc(l.e)}<td>${esc(l.t)}<td>${l.days}</tr>`).join(''):'<tr><td>No leave booked in the next 30 days.</tr>';
+function draw(){const q=$('#q').value.toLowerCase();
+$('#t').innerHTML='<tr><th>Name<th>Team<th>Total<th>Used<th>Remaining<th>Usage<th>Sick days<th>Bradford</tr>'+s.emps.filter(e=>(e.n+e.team).toLowerCase().includes(q)).map(e=>{const c=App.calc(e);return `<tr><td><a href="employee.html?n=${encodeURIComponent(e.n)}">${esc(e.n)}</a><td class="${e.team=='Team 1'?'t1':e.team=='Team 2'?'t2':''}">${esc(e.team)}<td>${c.total}<td>${c.used}<td><b>${c.remaining}</b><td><div class="bar"><i style="width:${Math.max(0,Math.min(100,c.used/c.total*100))}%"></i></div><td>${c.sick}<td><span class="pill ${App.bf(c.bf)}">${c.bf}</span></tr>`}).join('')}
+$('#q').oninput=draw;draw()});
+</script></body></html>
