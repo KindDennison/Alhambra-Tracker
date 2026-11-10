@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2027 rota · Holiday Tracker</title><link rel="stylesheet" href="shared.css"></head><body><main>
+<h1>2027 rota</h1><div id="r"></div></main>
+<script src="shared.js"></script><script>
+App.init('rota',()=>{const s=App.s,b=Object.fromEntries(s.bh),sd=D(s.set.shS),ed=D(s.set.shE);
+let h=`<div class="stats"><div class="card">Team 1 bank holidays accrued<b>${App.acc('Team 1')}</b></div><div class="card">Team 2 bank holidays accrued<b>${App.acc('Team 2')}</b></div><div class="card">Rotation starts<b style="font-size:18px">${fmt(s.set.ref)}</b></div></div>
+<p>Teams alternate weekly. A bank holiday that lands on a team's rest day (Mon or Fri) is added back to that team's allowance. Red days are the Christmas shutdown. Dates and teams are set on the <a href="employees.html">Employees</a> page.</p>`;
+for(let m=0;m<12;m++){const f=new Date(Date.UTC(2027,m,1)),n=new Date(Date.UTC(2027,m+1,0)).getUTCDate();
+h+=`<h2>${f.toLocaleString('en-GB',{month:'long',timeZone:'UTC'})} 2027</h2><div class="cal">`+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="h">${d}</div>`).join('')+'<div class="h"></div>'.repeat((f.getUTCDay()||7)-1);
+for(let d=1;d<=n;d++){const x=new Date(Date.UTC(2027,m,d)),k=iso(x),o=App.offT(x),sh=x>=sd&&x<=ed;
+h+=`<div style="${sh?'background:#d64545;color:#fff':b[k]?'outline:2px solid var(--ac)':''}">${d}${b[k]?`<small>${esc(b[k])}${o.length?' (accrued)':''}</small>`:''}${sh?'<small>Shutdown</small>':o.map(t=>`<small class="${t=='Team 1'?'t1':'t2'}">${t} off</small>`).join('')}</div>`}
+h+='</div>'}
+$('#r').innerHTML=h});
+</script></body></html>
