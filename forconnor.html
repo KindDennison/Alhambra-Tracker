@@ -3,7 +3,7 @@
 <h2>Leave starting in the next 30 days</h2><div class="wrap"><table id="up"></table></div>
 <h2>Everyone</h2><div class="row"><input id="q" placeholder="Search name or team" aria-label="Search"></div><div class="wrap"><table id="t"></table></div></main>
 <script src="shared.js"></script><script>
-App.init('index',()=>{const s=App.s,today=iso(new Date()),end=iso(new Date(Date.now()+30*864e5)),cs=s.emps.map(App.calc);
+App.init('forconnor',()=>{const s=App.s,today=iso(new Date()),end=iso(new Date(Date.now()+30*864e5)),cs=s.emps.map(App.calc);
 $('#st').innerHTML=[['Employees',s.emps.length],['Annual leave used',cs.reduce((a,c)=>a+c.used,0)],['Annual leave remaining',cs.reduce((a,c)=>a+c.remaining,0)],['Off today',s.log.filter(l=>l.d<=today&&iso(new Date(D(l.d).getTime()+(Math.ceil(l.days)-1)*864e5))>=today).length]].map(([a,b])=>`<div class="card">${a}<b>${b}</b></div>`).join('');
 const up=s.log.filter(l=>l.d>=today&&l.d<=end).sort((a,b)=>a.d<b.d?-1:1);
 $('#up').innerHTML=up.length?'<tr><th>Date<th>Employee<th>Type<th>Days</tr>'+up.map(l=>`<tr><td>${fmt(l.d)}<td>${esc(l.e)}<td>${esc(l.t)}<td>${l.days}</tr>`).join(''):'<tr><td>No leave booked in the next 30 days.</tr>';
