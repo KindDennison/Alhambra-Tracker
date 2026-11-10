@@ -1,0 +1,17 @@
+:root{--ink:#1d2733;--bg:#f4f6f8;--card:#fff;--line:#d9e0e6;--ac:#0f766e;--t1:#2b6cb0;--t2:#c05621;--mut:#667685}
+@media(prefers-color-scheme:dark){:root{--ink:#e6ebf0;--bg:#141a21;--card:#1c242d;--line:#2d3944;--ac:#14a89b;--t1:#63a4e8;--t2:#f0a05f;--mut:#9aa9b6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+nav{display:flex;gap:4px;align-items:center;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav b{margin-right:16px}nav a{padding:6px 12px;border-radius:6px;color:var(--ink);text-decoration:none}nav a.on{background:var(--ac);color:#fff}
+main{max-width:1100px;margin:0 auto;padding:20px}h1{font-size:22px;margin:0 0 14px}h2{font-size:17px;margin:22px 0 8px}a{color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}.stats b{display:block;font-size:26px}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;background:var(--card)}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:13px;color:var(--mut)}
+input,select,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+button{cursor:pointer;background:var(--ac);color:#fff;border:0}button.g{background:none;color:var(--ink);border:1px solid var(--line)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px}.row label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:2px}
+.bar{height:8px;background:var(--line);border-radius:4px;min-width:90px}.bar i{display:block;height:100%;background:var(--ac);border-radius:4px}
+.t1{color:var(--t1)}.t2{color:var(--t2)}.pill{padding:1px 8px;border-radius:10px}.amber{background:#f6d365;color:#000}.orange{background:#f4a261;color:#000}.red{background:#d64545;color:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:12px}.cal div{min-height:48px;padding:2px 4px;background:var(--card);border-radius:3px}.cal .h{min-height:0;color:var(--mut);background:none}.cal small{display:block;line-height:1.2}
+@media(max-width:600px){main{padding:12px}}
