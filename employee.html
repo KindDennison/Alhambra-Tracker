@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Employee · Holiday Tracker</title><link rel="stylesheet" href="shared.css"></head><body><main></main>
 <script src="shared.js"></script><script>
 App.init('employee',()=>{const s=App.s,n=new URLSearchParams(location.search).get('n'),e=s.emps.find(x=>x.n==n);
-if(!e){$('main').innerHTML='<p>Employee not found. <a href="index.html">Back to dashboard</a></p>';return}
+if(!e){$('main').innerHTML='<p>Employee not found. <a href="forconnor.html">Back to dashboard</a></p>';return}
 const c=App.calc(e);document.title=n+' · Holiday Tracker';
 $('main').innerHTML=`<h1>${esc(n)}</h1><p>${esc(e.d)} · ${esc(e.team)} · started ${fmt(e.start)}</p>
 <div class="stats">${[['Total available',c.total],['Annual leave used',c.used],['Remaining',c.remaining],['Sick days',c.sick],['Bradford Factor',`<span class="pill ${App.bf(c.bf)}">${c.bf}</span>`]].map(([a,b])=>`<div class="card">${a}<b>${b}</b></div>`).join('')}</div>
